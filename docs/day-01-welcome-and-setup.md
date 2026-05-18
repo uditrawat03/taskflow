@@ -17,7 +17,7 @@ By the end of today, you will have Python installed, VS Code configured, a worki
 A personal greeting script — `hello.py` — that prints your name, today's date, and a welcome message to the terminal. Small? Yes. But this is the foundation everything else is built on.
 
 ```
-Hello, Arjun!
+Hello, Udit!
 Today is Monday, 19 May 2025.
 Welcome to Day 01 of your Python journey.
 Let's build something real.
@@ -300,7 +300,7 @@ Python ignores any line that starts with `#`. Use comments to explain *why* you 
 **Variables:**
 
 ```python
-name = "Arjun"
+name = "Udit"
 day_number = 1
 ```
 
@@ -309,7 +309,7 @@ A variable is a named box that stores a value. The `=` sign is the assignment op
 **Strings:**
 
 ```python
-name = "Arjun"
+name = "Udit"
 series_name = "Python & AI Engineering"
 ```
 
