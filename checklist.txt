@@ -1,0 +1,39 @@
+Code Review Checklist
+=====================
+
+Naming:
+[ ] Variables and functions use snake_case
+[ ] Classes use PascalCase (Day 12)
+[ ] Constants use ALL_CAPS
+[ ] Names are descriptive — no single letters except loop counters
+[ ] No abbreviations that are not universally understood
+
+Functions:
+[ ] Every function has a docstring
+[ ] Every function does ONE thing
+[ ] Functions are short (aim for under 20 lines)
+[ ] No function takes more than 4-5 parameters
+[ ] Return values are consistent — always a dict, or always None, not sometimes one sometimes the other
+
+Input Handling:
+[ ] All user input is stripped and lowercased before use
+[ ] All numeric input is validated with .isdigit() before int()
+[ ] Empty input is handled gracefully — no crashes
+
+Edge Cases:
+[ ] Empty list handled before indexing
+[ ] Division only happens when denominator is not zero
+[ ] Index bounds checked before list access
+
+Code Quality:
+[ ] No magic numbers — use named constants
+[ ] No dead code (unreachable lines, unused variables)
+[ ] No deeply nested code (more than 2 indentation levels is a warning sign)
+[ ] No repeated code blocks — extract into a function
+
+Structure:
+[ ] if __name__ == "__main__": present in every runnable file
+[ ] Imports at the top
+[ ] Constants below imports
+[ ] Functions in logical order (helpers before callers)
+[ ] Main logic at the bottom
