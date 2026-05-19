@@ -1,5 +1,13 @@
 import datetime
-from storage import backup_tasks, load_tasks, save_tasks, get_next_id, get_storage_info, DATA_FILE
+from storage import (
+    backup_tasks,
+    load_tasks,
+    save_tasks,
+    get_next_id,
+    get_storage_info,
+    DATA_FILE,
+)
+from weather import fetch_weather, display_weather, get_weather_summary
 
 
 # ─── Constants ───────────────────────────────────────────
@@ -10,6 +18,9 @@ USER_PLAN = "free"
 MAX_TASKS = 10
 VALID_PRIORITIES = {"high", "medium", "low"}
 VALID_CATEGORIES = {"work", "personal", "health", "learning", "other"}
+USER_LATITUDE = 28.6139
+USER_LONGITUDE = 77.2090
+USER_LOCATION = "Delhi, IN"
 
 
 # ─── Pure Helper Functions ────────────────────────────────
@@ -79,11 +90,14 @@ def format_status(task: dict) -> str:
 # ─── Display Functions (side effects) ────────────────────
 
 
-def display_header() -> None:
-    """Print the application header."""
-    print("=" * 42)
+def display_header(weather: dict | None = None) -> None:
+    """Print the application header with optional weather summary."""
+    print("=" * 44)
     print(f"   {APP_NAME} — Task Manager v{VERSION}")
-    print("=" * 42)
+    if weather:
+        summary = get_weather_summary(weather)
+        print(f"   📍 {USER_LOCATION}  |  🌡 {summary}")
+    print("=" * 44)
     print(f"   Hello, {USER_NAME}! Plan: {USER_PLAN.title()} ({MAX_TASKS} tasks max)")
     print()
 
@@ -367,19 +381,16 @@ def show_storage_info() -> None:
 
 
 def main() -> None:
-    """Entry point — load persisted tasks, run command loop, save on exit."""
-
-    # Load tasks from file
-    print("\n  Loading tasks from storage...")
     tasks = load_tasks()
     next_id = [get_next_id(tasks)]
 
-    if tasks:
-        print(f"  ✓ {len(tasks)} task{'s' if len(tasks) != 1 else ''} loaded.\n")
-    else:
-        print("  No saved tasks found. Starting fresh.\n")
+    # Fetch weather at startup (non-blocking feel — shown after header)
+    print("\n  Loading tasks...", end=" ")
+    print(f"✓ {len(tasks)} task{'s' if len(tasks) != 1 else ''} loaded.\n")
 
-    display_header()
+    weather = fetch_weather(USER_LATITUDE, USER_LONGITUDE, USER_LOCATION)
+
+    display_header(weather)
     display_help()
 
     while True:
@@ -399,17 +410,16 @@ def main() -> None:
             cmd_search(tasks)
         elif command == "stats":
             display_stats(tasks)
+        elif command == "weather":
+            # Re-fetch live weather on demand
+            weather = fetch_weather(USER_LATITUDE, USER_LONGITUDE, USER_LOCATION)
+            display_weather(weather)
         elif command == "backup":
             backup_tasks()
-        elif command == "storage":
-            show_storage_info()
         elif command == "help":
             display_help()
         elif command == "quit":
-            # Save before quitting
-            print("\n  Saving tasks...")
-            if save_tasks(tasks):
-                print(f"  ✓ {len(tasks)} task{'s' if len(tasks) != 1 else ''} saved.")
+            save_tasks(tasks)
             cmd_quit(tasks)
             break
         elif command == "":

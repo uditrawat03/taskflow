@@ -1,163 +1,95 @@
-from pathlib import Path
+import json
 import datetime
+import shutil
+from pathlib import Path
 
 # ─── Configuration ────────────────────────────────────────
 BASE_DIR = Path(__file__).parent
-DATA_FILE = BASE_DIR / "taskflow_tasks.txt"
-SEPARATOR = "|"
+DATA_FILE = BASE_DIR / "taskflow_tasks.json"
 DATE_FMT = "%Y-%m-%d %H:%M"
-
-
-# ─── Serialization ────────────────────────────────────────
-
-
-def task_to_line(task: dict) -> str:
-    """
-    Convert a task dictionary to a single line string for file storage.
-
-    Format: id|title|priority|category|status|done|created_at
-
-    Args:
-        task (dict): A task dictionary.
-
-    Returns:
-        str: A pipe-separated string representation of the task.
-    """
-    return SEPARATOR.join(
-        [
-            str(task["id"]),
-            task["title"],
-            task["priority"],
-            task["category"],
-            task["status"],
-            str(task["done"]),
-            task["created_at"],
-        ]
-    )
-
-
-def line_to_task(line: str) -> dict | None:
-    """
-    Convert a stored line back into a task dictionary.
-
-    Args:
-        line (str): A pipe-separated line from the storage file.
-
-    Returns:
-        dict | None: A task dictionary, or None if the line is malformed.
-    """
-    line = line.strip()
-    if not line:
-        return None
-
-    parts = line.split(SEPARATOR)
-    if len(parts) != 7:
-        print(f"  ⚠ Skipping malformed line: '{line}'")
-        return None
-
-    task_id, title, priority, category, status, done_str, created_at = parts
-
-    return {
-        "id": int(task_id),
-        "title": title,
-        "priority": priority,
-        "category": category,
-        "status": status,
-        "done": done_str == "True",
-        "created_at": created_at,
-    }
-
-
-# ─── File Operations ──────────────────────────────────────
 
 
 def save_tasks(tasks: list, filepath: Path = DATA_FILE) -> bool:
     """
-    Save all tasks to a text file.
+    Save all tasks to a JSON file.
 
-    Each task is written as one pipe-separated line.
-    Overwrites the file completely on each save.
+    Uses an atomic write pattern — writes to a temp file first,
+    then renames, so the data file is never left half-written.
 
     Args:
-        tasks    (list): List of task dictionaries to save.
-        filepath (Path): Path to the storage file.
+        tasks    (list): List of task dictionaries.
+        filepath (Path): Destination JSON file path.
 
     Returns:
         bool: True if save succeeded, False otherwise.
     """
+    tmp_path = filepath.with_suffix(".tmp")
     try:
-        with open(filepath, "w", encoding="utf-8") as f:
-            for task in tasks:
-                f.write(task_to_line(task) + "\n")
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(tasks, f, indent=2, ensure_ascii=False)
+        tmp_path.rename(filepath)  # atomic replace
         return True
-    except OSError as e:
-        print(f"  ✗ Failed to save tasks: {e}")
+    except (OSError, TypeError) as e:
+        print(f"  ✗ Save failed: {e}")
+        if tmp_path.exists():
+            tmp_path.unlink()  # clean up temp file on failure
         return False
 
 
 def load_tasks(filepath: Path = DATA_FILE) -> list:
     """
-    Load tasks from a text file.
+    Load tasks from a JSON file.
 
-    Returns an empty list if the file does not exist or cannot be read.
+    Returns an empty list if the file does not exist or is corrupted.
 
     Args:
-        filepath (Path): Path to the storage file.
+        filepath (Path): Source JSON file path.
 
     Returns:
-        list: List of task dictionaries loaded from file.
+        list: List of task dictionaries, or [] on failure.
     """
     if not filepath.exists():
         return []
 
-    tasks = []
     try:
         with open(filepath, "r", encoding="utf-8") as f:
-            for line in f:
-                task = line_to_task(line)
-                if task is not None:
-                    tasks.append(task)
-    except OSError as e:
-        print(f"  ✗ Failed to load tasks: {e}")
+            data = json.load(f)
+        if not isinstance(data, list):
+            print("  ✗ Storage file is corrupted — expected a list.")
+            return []
+        return data
+    except json.JSONDecodeError as e:
+        print(f"  ✗ Storage file is invalid JSON: {e}")
         return []
-
-    return tasks
+    except OSError as e:
+        print(f"  ✗ Could not read storage file: {e}")
+        return []
 
 
 def get_next_id(tasks: list) -> int:
-    """
-    Calculate the next available task ID from the loaded task list.
-
-    Args:
-        tasks (list): List of task dictionaries.
-
-    Returns:
-        int: The next available ID (max existing ID + 1, or 1 if empty).
-    """
-    if not tasks:
-        return 1
-    return max(t["id"] for t in tasks) + 1
+    """Return the next available task ID."""
+    return max((t["id"] for t in tasks), default=0) + 1
 
 
 def backup_tasks(filepath: Path = DATA_FILE) -> bool:
     """
-    Create a timestamped backup of the tasks file.
+    Create a timestamped backup of the JSON storage file.
 
     Args:
         filepath (Path): Path to the storage file to back up.
 
     Returns:
-        bool: True if backup succeeded, False otherwise.
+        bool: True if backup succeeded.
     """
     if not filepath.exists():
+        print("  ✗ No storage file to back up.")
         return False
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_path = filepath.parent / f"taskflow_tasks_backup_{timestamp}.txt"
+    backup_path = filepath.parent / f"taskflow_backup_{timestamp}.json"
 
     try:
-        content = filepath.read_text(encoding="utf-8")
-        backup_path.write_text(content, encoding="utf-8")
+        shutil.copy2(filepath, backup_path)
         print(f"  ✓ Backup saved: {backup_path.name}")
         return True
     except OSError as e:
@@ -166,24 +98,16 @@ def backup_tasks(filepath: Path = DATA_FILE) -> bool:
 
 
 def get_storage_info(filepath: Path = DATA_FILE) -> dict:
-    """
-    Return metadata about the storage file.
-
-    Args:
-        filepath (Path): Path to the storage file.
-
-    Returns:
-        dict: File metadata — exists, size, last modified.
-    """
+    """Return metadata about the storage file."""
     if not filepath.exists():
-        return {"exists": False, "size_bytes": 0, "last_modified": None}
+        return {"exists": False}
 
     stat = filepath.stat()
     return {
         "exists": True,
+        "filepath": str(filepath),
         "size_bytes": stat.st_size,
         "last_modified": datetime.datetime.fromtimestamp(stat.st_mtime).strftime(
             DATE_FMT
         ),
-        "filepath": str(filepath),
     }
