@@ -1,91 +1,213 @@
 
 import datetime
 
-# --- Constants ---
-APP_NAME    = "TaskFlow AI"
-VERSION     = "0.2"
-USER_NAME   = "Udit"
-USER_PLAN   = "free"
-MAX_TASKS   = 10
-
+# ─── Constants ───────────────────────────────────────────
+APP_NAME         = "TaskFlow AI"
+VERSION          = "0.3"
+USER_NAME        = "Udit"
+USER_PLAN        = "free"
+MAX_TASKS        = 10
 VALID_PRIORITIES = {"high", "medium", "low"}
 VALID_CATEGORIES = {"work", "personal", "health", "learning", "other"}
 
-# --- State ---
-tasks      = []          # list of task dicts
-task_id    = 1           # auto-incrementing ID counter
-categories = set()       # track unique categories in use
 
-# --- Helper: Create a task dict ---
-def make_task(title, priority, category):
-    global task_id
-    task = {
+# ─── Pure Helper Functions ────────────────────────────────
+
+def make_task(task_id: int, title: str, priority: str, category: str) -> dict:
+    """
+    Create and return a new task dictionary.
+
+    Args:
+        task_id  (int): Unique identifier for the task.
+        title    (str): Task title.
+        priority (str): One of 'high', 'medium', 'low'.
+        category (str): One of the valid categories.
+
+    Returns:
+        dict: A fully populated task dictionary.
+    """
+    return {
         "id":         task_id,
         "title":      title,
-        "priority":   priority.lower(),
-        "category":   category.lower(),
+        "priority":   priority,
+        "category":   category,
         "status":     "pending",
         "done":       False,
         "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
-    task_id += 1
-    return task
 
-# --- Helper: Display tasks as a table ---
-def display_tasks(task_list):
-    if not task_list:
-        print("\n  No tasks yet. Type 'add' to get started.\n")
+
+def calculate_stats(tasks: list) -> dict:
+    """
+    Calculate summary statistics for a list of tasks.
+
+    Args:
+        tasks (list): List of task dictionaries.
+
+    Returns:
+        dict: Stats including total, done, pending, and completion_rate.
+    """
+    total   = len(tasks)
+    done    = sum(1 for t in tasks if t["done"])
+    pending = total - done
+    rate    = round(done / total * 100, 1) if total > 0 else 0.0
+    return {"total": total, "done": done, "pending": pending, "rate": rate}
+
+
+def get_tasks_by_priority(tasks: list, priority: str) -> list:
+    """Return a filtered list of tasks matching the given priority."""
+    return [t for t in tasks if t["priority"] == priority]
+
+
+def get_pending_tasks(tasks: list) -> list:
+    """Return only tasks that are not yet done."""
+    return [t for t in tasks if not t["done"]]
+
+
+def is_at_limit(tasks: list, limit: int) -> bool:
+    """Return True if the task list has reached its limit."""
+    return len(tasks) >= limit
+
+
+def format_status(task: dict) -> str:
+    """Return a formatted status string for display."""
+    return "✓ done" if task["done"] else "pending"
+
+
+# ─── Display Functions (side effects) ────────────────────
+
+def display_header() -> None:
+    """Print the application header."""
+    print("=" * 42)
+    print(f"   {APP_NAME} — Task Manager v{VERSION}")
+    print("=" * 42)
+    print(f"   Hello, {USER_NAME}! Plan: {USER_PLAN.title()} ({MAX_TASKS} tasks max)")
+    print()
+
+
+def display_tasks(tasks: list) -> None:
+    """
+    Display all tasks in a formatted table.
+
+    Args:
+        tasks (list): List of task dictionaries to display.
+    """
+    if not tasks:
+        print("\n  No tasks yet. Type 'add' to create your first task.\n")
         return
 
-    col_title    = 24
-    col_priority = 10
-    col_category = 12
-    col_status   = 10
-    total_width  = 4 + col_title + col_priority + col_category + col_status + 6
-
-    header = (
-        f"  {'#':<4}"
-        f"{'Title':<{col_title}}"
-        f"{'Priority':<{col_priority}}"
-        f"{'Category':<{col_category}}"
-        f"{'Status':<{col_status}}"
-    )
+    col = {"num": 4, "title": 26, "priority": 10, "category": 12, "status": 10}
+    width = sum(col.values()) + 4
 
     print()
-    print("-" * total_width)
-    print(header)
-    print("-" * total_width)
+    print("  " + "-" * width)
+    print(
+        f"  {'#':<{col['num']}}"
+        f"{'Title':<{col['title']}}"
+        f"{'Priority':<{col['priority']}}"
+        f"{'Category':<{col['category']}}"
+        f"Status"
+    )
+    print("  " + "-" * width)
 
-    for i, task in enumerate(task_list, start=1):
-        status_display = "✓ done" if task["done"] else "pending"
-        title_display  = task["title"][:col_title - 2] + ".." \
-                         if len(task["title"]) > col_title - 1 \
-                         else task["title"]
+    for i, task in enumerate(tasks, start=1):
+        title = (task["title"][:col["title"] - 2] + "..") \
+                if len(task["title"]) >= col["title"] else task["title"]
         print(
-            f"  {i:<4}"
-            f"{title_display:<{col_title}}"
-            f"{task['priority'].upper():<{col_priority}}"
-            f"{task['category']:<{col_category}}"
-            f"{status_display:<{col_status}}"
+            f"  {i:<{col['num']}}"
+            f"{title:<{col['title']}}"
+            f"{task['priority'].upper():<{col['priority']}}"
+            f"{task['category']:<{col['category']}}"
+            f"{format_status(task)}"
         )
 
-    print("-" * total_width)
+    print("  " + "-" * width)
+    stats = calculate_stats(tasks)
+    print(f"  {stats['total']} tasks · {stats['pending']} pending · "
+          f"{stats['done']} done · {stats['rate']}% complete\n")
 
-    # Summary line
-    done_count    = sum(1 for t in task_list if t["done"])
-    pending_count = len(task_list) - done_count
-    print(f"  {len(task_list)} total · {pending_count} pending · {done_count} done")
 
-    # Active categories
-    if categories:
-        print(f"  Categories in use: {', '.join(sorted(categories))}")
+def display_stats(tasks: list) -> None:
+    """Display a detailed statistics dashboard."""
+    stats = calculate_stats(tasks)
+
+    print("\n  ── Task Statistics ──────────────────")
+    print(f"  Total      : {stats['total']}")
+    print(f"  Done       : {stats['done']}  ({stats['rate']}%)")
+    print(f"  Pending    : {stats['pending']}")
+
+    if tasks:
+        print("\n  By Priority:")
+        for p in ["high", "medium", "low"]:
+            count = len(get_tasks_by_priority(tasks, p))
+            bar   = "█" * count
+            print(f"    {p.upper():<8}: {count:>2}  {bar}")
+
+        print("\n  By Category:")
+        categories = {t["category"] for t in tasks}
+        for cat in sorted(categories):
+            count = sum(1 for t in tasks if t["category"] == cat)
+            print(f"    {cat:<12}: {count}")
     print()
 
-# --- Command: Add task ---
-def add_task():
-    if len(tasks) >= MAX_TASKS:
-        print(f"\n  ✗ Limit reached ({MAX_TASKS} tasks on {USER_PLAN} plan). "
-              f"Upgrade to premium for more.\n")
+
+# ─── Input Collection Functions ───────────────────────────
+
+def prompt_valid(prompt: str, valid_options: set, label: str = "option") -> str:
+    """
+    Prompt the user until they enter a value from valid_options.
+
+    Args:
+        prompt        (str): The input prompt to display.
+        valid_options (set): Set of accepted values.
+        label         (str): Human-readable name used in error messages.
+
+    Returns:
+        str: The validated, lowercased user input.
+    """
+    while True:
+        value = input(prompt).strip().lower()
+        if value in valid_options:
+            return value
+        print(f"  ✗ Invalid {label}. Choose from: {', '.join(sorted(valid_options))}")
+
+
+def prompt_task_number(tasks: list, action: str = "select") -> int | None:
+    """
+    Prompt the user for a task number and return a 0-based index.
+
+    Args:
+        tasks  (list): Current task list (used for range validation).
+        action (str) : Verb to use in the prompt (e.g., 'remove', 'mark done').
+
+    Returns:
+        int | None: 0-based index if valid, None if invalid.
+    """
+    raw = input(f"  Task number to {action}: ").strip()
+    if not raw.isdigit():
+        print("  ✗ Please enter a number.\n")
+        return None
+    index = int(raw) - 1
+    if not (0 <= index < len(tasks)):
+        print(f"  ✗ Choose a number between 1 and {len(tasks)}.\n")
+        return None
+    return index
+
+
+# ─── Command Functions ────────────────────────────────────
+
+def cmd_add(tasks: list, next_id: list) -> None:
+    """
+    Prompt for task details and add a new task to the list.
+
+    Args:
+        tasks   (list): The current task list (mutated in place).
+        next_id (list): Single-element list holding the next task ID.
+                        Using a list avoids the 'global' keyword.
+    """
+    if is_at_limit(tasks, MAX_TASKS):
+        print(f"\n  ✗ Task limit reached ({MAX_TASKS} tasks on {USER_PLAN} plan). "
+              f"Upgrade to premium.\n")
         return
 
     title = input("  Title    : ").strip()
@@ -93,130 +215,161 @@ def add_task():
         print("  ✗ Title cannot be empty.\n")
         return
 
-    # Validated priority input loop
-    while True:
-        priority = input("  Priority : ").strip().lower()
-        if priority in VALID_PRIORITIES:
-            break
-        print(f"  ✗ Enter one of: {', '.join(sorted(VALID_PRIORITIES))}")
+    priority = prompt_valid("  Priority : ", VALID_PRIORITIES, "priority")
+    category = prompt_valid("  Category : ", VALID_CATEGORIES, "category")
 
-    # Validated category input loop
-    while True:
-        category = input("  Category : ").strip().lower()
-        if category in VALID_CATEGORIES:
-            break
-        print(f"  ✗ Enter one of: {', '.join(sorted(VALID_CATEGORIES))}")
-
-    task = make_task(title, priority, category)
+    task = make_task(next_id[0], title, priority, category)
     tasks.append(task)
-    categories.add(category)
+    next_id[0] += 1
 
     count = len(tasks)
     print(f"\n  ✓ Task added! ({count} task{'s' if count != 1 else ''} total)\n")
 
-    # Soft limit warnings
-    if count == MAX_TASKS - 2:
-        print(f"  ⚠ Warning: 2 tasks until your {USER_PLAN} plan limit.\n")
-    elif count == MAX_TASKS:
-        print("  ⚠ Task limit reached. Upgrade to premium for more.\n")
+    remaining = MAX_TASKS - count
+    if remaining <= 2:
+        print(f"  ⚠  Only {remaining} task slot{'s' if remaining != 1 else ''} remaining "
+              f"on your {USER_PLAN} plan.\n")
 
-# --- Command: Mark task done ---
-def mark_done():
-    pending = [t for t in tasks if not t["done"]]
+
+def cmd_done(tasks: list) -> None:
+    """Mark a selected task as done."""
+    pending = get_pending_tasks(tasks)
     if not pending:
         print("\n  ✓ All tasks are already done! Great work.\n")
         return
 
     display_tasks(tasks)
-    raw = input("  Mark task number as done: ").strip()
-
-    if not raw.isdigit():
-        print("  ✗ Please enter a valid number.\n")
+    index = prompt_task_number(tasks, action="mark done")
+    if index is None:
         return
 
-    index = int(raw) - 1
-    if 0 <= index < len(tasks):
-        if tasks[index]["done"]:
-            print("  ✗ Task already marked as done.\n")
-        else:
-            tasks[index]["done"]   = True
-            tasks[index]["status"] = "done"
-            print(f"\n  ✓ \"{tasks[index]['title']}\" marked as done!\n")
+    if tasks[index]["done"]:
+        print("  ✗ Task is already marked as done.\n")
     else:
-        print(f"  ✗ Invalid number. Choose between 1 and {len(tasks)}.\n")
+        tasks[index]["done"]   = True
+        tasks[index]["status"] = "done"
+        print(f"\n  ✓ \"{tasks[index]['title']}\" marked as done!\n")
 
-# --- Command: Remove task ---
-def remove_task():
+
+def cmd_remove(tasks: list) -> None:
+    """Remove a selected task from the list."""
     if not tasks:
         print("\n  ✗ No tasks to remove.\n")
         return
 
     display_tasks(tasks)
-    raw = input("  Remove task number: ").strip()
-
-    if not raw.isdigit():
-        print("  ✗ Please enter a valid number.\n")
+    index = prompt_task_number(tasks, action="remove")
+    if index is None:
         return
 
-    index = int(raw) - 1
-    if 0 <= index < len(tasks):
-        removed = tasks.pop(index)
-        # Rebuild categories set from remaining tasks
-        categories.clear()
-        for t in tasks:
-            categories.add(t["category"])
-        remaining = len(tasks)
-        print(f"\n  ✓ \"{removed['title']}\" removed. "
-              f"({remaining} task{'s' if remaining != 1 else ''} remaining)\n")
-    else:
-        print(f"  ✗ Invalid number. Choose between 1 and {len(tasks)}.\n")
+    removed   = tasks.pop(index)
+    remaining = len(tasks)
+    print(f"\n  ✓ \"{removed['title']}\" removed. "
+          f"({remaining} task{'s' if remaining != 1 else ''} remaining)\n")
 
-# --- Command: Filter by priority ---
-def filter_by_priority():
-    while True:
-        priority = input("  Show priority (high/medium/low): ").strip().lower()
-        if priority in VALID_PRIORITIES:
-            break
-        print("  ✗ Enter one of: high, medium, low")
 
-    filtered = [t for t in tasks if t["priority"] == priority]
+def cmd_filter(tasks: list) -> None:
+    """Display tasks filtered by priority."""
+    priority = prompt_valid(
+        "  Show priority (high/medium/low): ",
+        VALID_PRIORITIES,
+        "priority"
+    )
+    filtered = get_tasks_by_priority(tasks, priority)
     if not filtered:
         print(f"\n  No {priority}-priority tasks found.\n")
     else:
-        print(f"\n  {priority.upper()} priority tasks:")
+        print(f"\n  {priority.upper()} priority tasks ({len(filtered)}):")
         display_tasks(filtered)
 
-# --- Main Command Loop ---
-print("=" * 40)
-print(f"   {APP_NAME} — Task Manager v{VERSION}")
-print("=" * 40)
-print(f"\n  Hello, {USER_NAME}! Plan: {USER_PLAN.title()} ({MAX_TASKS} tasks max)")
-print("\n  Commands: add | view | done | remove | filter | quit\n")
 
-while True:
-    command = input("> ").strip().lower()
-
-    if command == "add":
-        add_task()
-    elif command == "view":
-        display_tasks(tasks)
-    elif command == "done":
-        mark_done()
-    elif command == "remove":
-        remove_task()
-    elif command == "filter":
-        filter_by_priority()
-    elif command == "quit":
-        count = len(tasks)
-        done  = sum(1 for t in tasks if t["done"])
-        print(f"\n  Goodbye, {USER_NAME}!")
-        if count == 0:
-            print("  No tasks — clean slate. See you tomorrow.")
-        else:
-            print(f"  {done}/{count} tasks completed. Keep going!")
-        break
-    elif command == "":
-        continue
+def cmd_search(tasks: list) -> None:
+    """Search tasks by keyword in title."""
+    keyword = input("  Search keyword: ").strip().lower()
+    if not keyword:
+        print("  ✗ Please enter a search term.\n")
+        return
+    matches = [t for t in tasks if keyword in t["title"].lower()]
+    if not matches:
+        print(f"\n  No tasks matching '{keyword}'.\n")
     else:
-        print(f"\n  ✗ Unknown command '{command}'.")
-        print("  Try: add | view | done | remove | filter | quit\n")
+        print(f"\n  Results for '{keyword}' ({len(matches)} found):")
+        display_tasks(matches)
+
+
+def cmd_quit(tasks: list) -> None:
+    """Display a goodbye message and exit."""
+    stats = calculate_stats(tasks)
+    print(f"\n  Goodbye, {USER_NAME}!")
+    if stats["total"] == 0:
+        print("  No tasks — clean slate. See you tomorrow.")
+    else:
+        print(f"  {stats['done']}/{stats['total']} tasks completed "
+              f"({stats['rate']}%). Keep going!")
+    print()
+
+
+# ─── Command Registry ─────────────────────────────────────
+# Maps command strings to functions — no giant if/elif chain needed.
+# We will expand this pattern into a full CLI framework on Day 11.
+
+COMMANDS = {
+    "add":    "Add a new task",
+    "view":   "View all tasks",
+    "done":   "Mark a task as done",
+    "remove": "Remove a task",
+    "filter": "Filter by priority",
+    "search": "Search tasks by keyword",
+    "stats":  "View statistics dashboard",
+    "quit":   "Exit TaskFlow AI",
+}
+
+
+def display_help() -> None:
+    """Display available commands."""
+    print("\n  Available commands:")
+    for cmd, description in COMMANDS.items():
+        print(f"    {cmd:<10} — {description}")
+    print()
+
+
+# ─── Main ─────────────────────────────────────────────────
+
+def main() -> None:
+    """Entry point — initialise state and run the command loop."""
+    tasks   = []
+    next_id = [1]    # list wrapper to avoid 'global' keyword
+
+    display_header()
+    display_help()
+
+    while True:
+        command = input("> ").strip().lower()
+
+        if command == "add":
+            cmd_add(tasks, next_id)
+        elif command == "view":
+            display_tasks(tasks)
+        elif command == "done":
+            cmd_done(tasks)
+        elif command == "remove":
+            cmd_remove(tasks)
+        elif command == "filter":
+            cmd_filter(tasks)
+        elif command == "search":
+            cmd_search(tasks)
+        elif command == "stats":
+            display_stats(tasks)
+        elif command == "help":
+            display_help()
+        elif command == "quit":
+            cmd_quit(tasks)
+            break
+        elif command == "":
+            continue
+        else:
+            print(f"\n  ✗ Unknown command '{command}'. Type 'help' for options.\n")
+
+
+if __name__ == "__main__":
+    main()
