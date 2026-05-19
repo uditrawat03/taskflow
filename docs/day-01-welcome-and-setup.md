@@ -425,15 +425,3 @@ On Day 02, we go deeper into variables and data types — strings, integers, flo
 Every line of code you write from here will be part of something real.
 
 > **A note on Python 3.14 features across this series:** We use f-strings throughout Phase 1 and 2 because they are universal and beginner-friendly. In Phase 4 (AI Engineering), we will introduce **t-strings** — Python 3.14's new template string feature — when building AI prompts, because t-strings are specifically designed for safely handling dynamic, user-supplied content in strings. Every new feature of 3.14 will appear at the moment it is most naturally useful in our project.
-
----
-
-## Vlog Content Angle
-
-**"The programmer's first day — raw, honest, and real."**
-
-Film your actual setup process. Don't hide the confusion. If something doesn't install correctly the first time, keep the camera rolling and fix it on screen. That raw moment — the error, the frustration, the fix — is more valuable to a beginner than a perfect tutorial.
-
-Talk directly to the viewer who is terrified to start. Tell them what you were thinking when you first ran `python hello.py`. Keep it human. The goal of Day 01 is not to teach Python. It is to make someone believe they can do this.
-
-Show your desktop. Show your terminal. Show the error message you got. Show it working. That journey in 10 minutes is what builds an audience for 90 days.

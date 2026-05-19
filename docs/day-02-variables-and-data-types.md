@@ -629,15 +629,3 @@ When you hit a `TypeError` today — and you will — read the full message. Pyt
 On **Day 03** we add interactivity — `input()` and `if/elif/else` — so TaskFlow AI can respond differently based on what the user types. The profile you built today becomes the starting point for a smart, personalized greeting system.
 
 On **Day 04** we introduce lists and loops — the data structures that will let us store and manage multiple tasks, not just one user profile.
-
----
-
-## Vlog Content Angle
-
-**"Variables are boxes. Data types are what goes inside them."**
-
-Use a physical prop — literally bring cardboard boxes on screen and label them. Drop a piece of paper (string), a coin (number), a light switch model (bool), and an empty box with a question mark (None). This is cheesy and it will be the most remembered 30 seconds of your whole series.
-
-Then open VS Code and show a live `TypeError` — specifically `"Age: " + age`. Let it crash. Read the error message out loud, slowly, as if you've never seen it before. Then fix it two ways: with `str()` and with an f-string. Show why f-strings are the clean choice.
-
-End the vlog with the completed `profile.py` running. It's a small thing — a formatted profile in a terminal — but frame it as what it really is: the first file of a product that will eventually run in the cloud, serve real users, and have AI built into it.
