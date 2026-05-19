@@ -1,12 +1,13 @@
 import datetime
 from storage import (
     backup_tasks,
-    load_tasks,
+    load_tasks_safe,
     save_tasks,
     get_next_id,
     get_storage_info,
     DATA_FILE,
 )
+from errors import StorageError, ValidationError, TaskFlowError
 from weather import fetch_weather, display_weather, get_weather_summary
 
 
@@ -381,51 +382,88 @@ def show_storage_info() -> None:
 
 
 def main() -> None:
-    tasks = load_tasks()
+    """Entry point with full exception handling."""
+
+    # ── Load tasks ────────────────────────────────────────
+    print("\n  Loading tasks...", end=" ", flush=True)
+    tasks, load_error = load_tasks_safe()
+
+    if load_error:
+        print(f"\n  ✗ {load_error}")
+        print("  ℹ  Creating a backup and starting with an empty task list.")
+        try:
+            backup_tasks()
+        except Exception:
+            pass  # backup failure is not critical — continue regardless
+        tasks = []
+    else:
+        count = len(tasks)
+        print(f"✓ {count} task{'s' if count != 1 else ''} loaded.")
+
     next_id = [get_next_id(tasks)]
 
-    # Fetch weather at startup (non-blocking feel — shown after header)
-    print("\n  Loading tasks...", end=" ")
-    print(f"✓ {len(tasks)} task{'s' if len(tasks) != 1 else ''} loaded.\n")
-
-    weather = fetch_weather(USER_LATITUDE, USER_LONGITUDE, USER_LOCATION)
+    # ── Fetch weather ─────────────────────────────────────
+    try:
+        weather = fetch_weather(USER_LATITUDE, USER_LONGITUDE, USER_LOCATION)
+    except Exception:
+        weather = None  # weather is non-critical — never crash for it
 
     display_header(weather)
     display_help()
 
+    # ── Command loop ──────────────────────────────────────
     while True:
-        command = input("> ").strip().lower()
+        try:
+            command = input("> ").strip().lower()
+        except (KeyboardInterrupt, EOFError):
+            # Handle Ctrl+C and Ctrl+D gracefully
+            print("\n\n  Interrupted. Saving tasks before exit...")
+            command = "quit"
 
-        if command == "add":
-            cmd_add(tasks, next_id)
-        elif command == "view":
-            display_tasks(tasks)
-        elif command == "done":
-            cmd_done(tasks)
-        elif command == "remove":
-            cmd_remove(tasks)
-        elif command == "filter":
-            cmd_filter(tasks)
-        elif command == "search":
-            cmd_search(tasks)
-        elif command == "stats":
-            display_stats(tasks)
-        elif command == "weather":
-            # Re-fetch live weather on demand
-            weather = fetch_weather(USER_LATITUDE, USER_LONGITUDE, USER_LOCATION)
-            display_weather(weather)
-        elif command == "backup":
-            backup_tasks()
-        elif command == "help":
-            display_help()
-        elif command == "quit":
-            save_tasks(tasks)
-            cmd_quit(tasks)
-            break
-        elif command == "":
-            continue
-        else:
-            print(f"\n  ✗ Unknown command '{command}'. Type 'help' for options.\n")
+        try:
+            if command == "add":
+                cmd_add(tasks, next_id)
+            elif command == "view":
+                display_tasks(tasks)
+            elif command == "done":
+                cmd_done(tasks)
+            elif command == "remove":
+                cmd_remove(tasks)
+            elif command == "filter":
+                cmd_filter(tasks)
+            elif command == "search":
+                cmd_search(tasks)
+            elif command == "stats":
+                display_stats(tasks)
+            elif command == "weather":
+                weather = fetch_weather(USER_LATITUDE, USER_LONGITUDE, USER_LOCATION)
+                display_weather(weather)
+            elif command == "backup":
+                backup_tasks()
+            elif command == "help":
+                display_help()
+            elif command == "quit":
+                try:
+                    save_tasks(tasks)
+                    print(f"  ✓ {len(tasks)} tasks saved.")
+                except StorageError as e:
+                    print(f"  ✗ Could not save tasks: {e}")
+                    print("  ⚠  Your tasks may not have been saved.")
+                cmd_quit(tasks)
+                break
+            elif command == "":
+                continue
+            else:
+                print(f"\n  ✗ Unknown command '{command}'. Type 'help'.\n")
+
+        except ValidationError as e:
+            print(f"\n  ✗ Validation error: {e}\n")
+        except TaskFlowError as e:
+            print(f"\n  ✗ Error: {e}\n")
+        except Exception as e:
+            # Catch-all for truly unexpected errors — log and continue
+            print(f"\n  ✗ Unexpected error: {type(e).__name__}: {e}")
+            print("  ℹ  The app will continue. Please report this bug.\n")
 
 
 if __name__ == "__main__":
