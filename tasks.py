@@ -1,17 +1,19 @@
-
 import datetime
+from storage import backup_tasks, load_tasks, save_tasks, get_next_id, get_storage_info, DATA_FILE
+
 
 # ─── Constants ───────────────────────────────────────────
-APP_NAME         = "TaskFlow AI"
-VERSION          = "0.3"
-USER_NAME        = "Udit"
-USER_PLAN        = "free"
-MAX_TASKS        = 10
+APP_NAME = "TaskFlow AI"
+VERSION = "0.3"
+USER_NAME = "Udit"
+USER_PLAN = "free"
+MAX_TASKS = 10
 VALID_PRIORITIES = {"high", "medium", "low"}
 VALID_CATEGORIES = {"work", "personal", "health", "learning", "other"}
 
 
 # ─── Pure Helper Functions ────────────────────────────────
+
 
 def make_task(task_id: int, title: str, priority: str, category: str) -> dict:
     """
@@ -27,12 +29,12 @@ def make_task(task_id: int, title: str, priority: str, category: str) -> dict:
         dict: A fully populated task dictionary.
     """
     return {
-        "id":         task_id,
-        "title":      title,
-        "priority":   priority,
-        "category":   category,
-        "status":     "pending",
-        "done":       False,
+        "id": task_id,
+        "title": title,
+        "priority": priority,
+        "category": category,
+        "status": "pending",
+        "done": False,
         "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
 
@@ -47,10 +49,10 @@ def calculate_stats(tasks: list) -> dict:
     Returns:
         dict: Stats including total, done, pending, and completion_rate.
     """
-    total   = len(tasks)
-    done    = sum(1 for t in tasks if t["done"])
+    total = len(tasks)
+    done = sum(1 for t in tasks if t["done"])
     pending = total - done
-    rate    = round(done / total * 100, 1) if total > 0 else 0.0
+    rate = round(done / total * 100, 1) if total > 0 else 0.0
     return {"total": total, "done": done, "pending": pending, "rate": rate}
 
 
@@ -75,6 +77,7 @@ def format_status(task: dict) -> str:
 
 
 # ─── Display Functions (side effects) ────────────────────
+
 
 def display_header() -> None:
     """Print the application header."""
@@ -111,8 +114,11 @@ def display_tasks(tasks: list) -> None:
     print("  " + "-" * width)
 
     for i, task in enumerate(tasks, start=1):
-        title = (task["title"][:col["title"] - 2] + "..") \
-                if len(task["title"]) >= col["title"] else task["title"]
+        title = (
+            (task["title"][: col["title"] - 2] + "..")
+            if len(task["title"]) >= col["title"]
+            else task["title"]
+        )
         print(
             f"  {i:<{col['num']}}"
             f"{title:<{col['title']}}"
@@ -123,8 +129,10 @@ def display_tasks(tasks: list) -> None:
 
     print("  " + "-" * width)
     stats = calculate_stats(tasks)
-    print(f"  {stats['total']} tasks · {stats['pending']} pending · "
-          f"{stats['done']} done · {stats['rate']}% complete\n")
+    print(
+        f"  {stats['total']} tasks · {stats['pending']} pending · "
+        f"{stats['done']} done · {stats['rate']}% complete\n"
+    )
 
 
 def display_stats(tasks: list) -> None:
@@ -140,7 +148,7 @@ def display_stats(tasks: list) -> None:
         print("\n  By Priority:")
         for p in ["high", "medium", "low"]:
             count = len(get_tasks_by_priority(tasks, p))
-            bar   = "█" * count
+            bar = "█" * count
             print(f"    {p.upper():<8}: {count:>2}  {bar}")
 
         print("\n  By Category:")
@@ -152,6 +160,7 @@ def display_stats(tasks: list) -> None:
 
 
 # ─── Input Collection Functions ───────────────────────────
+
 
 def prompt_valid(prompt: str, valid_options: set, label: str = "option") -> str:
     """
@@ -196,6 +205,7 @@ def prompt_task_number(tasks: list, action: str = "select") -> int | None:
 
 # ─── Command Functions ────────────────────────────────────
 
+
 def cmd_add(tasks: list, next_id: list) -> None:
     """
     Prompt for task details and add a new task to the list.
@@ -206,8 +216,10 @@ def cmd_add(tasks: list, next_id: list) -> None:
                         Using a list avoids the 'global' keyword.
     """
     if is_at_limit(tasks, MAX_TASKS):
-        print(f"\n  ✗ Task limit reached ({MAX_TASKS} tasks on {USER_PLAN} plan). "
-              f"Upgrade to premium.\n")
+        print(
+            f"\n  ✗ Task limit reached ({MAX_TASKS} tasks on {USER_PLAN} plan). "
+            f"Upgrade to premium.\n"
+        )
         return
 
     title = input("  Title    : ").strip()
@@ -227,8 +239,10 @@ def cmd_add(tasks: list, next_id: list) -> None:
 
     remaining = MAX_TASKS - count
     if remaining <= 2:
-        print(f"  ⚠  Only {remaining} task slot{'s' if remaining != 1 else ''} remaining "
-              f"on your {USER_PLAN} plan.\n")
+        print(
+            f"  ⚠  Only {remaining} task slot{'s' if remaining != 1 else ''} remaining "
+            f"on your {USER_PLAN} plan.\n"
+        )
 
 
 def cmd_done(tasks: list) -> None:
@@ -246,9 +260,9 @@ def cmd_done(tasks: list) -> None:
     if tasks[index]["done"]:
         print("  ✗ Task is already marked as done.\n")
     else:
-        tasks[index]["done"]   = True
+        tasks[index]["done"] = True
         tasks[index]["status"] = "done"
-        print(f"\n  ✓ \"{tasks[index]['title']}\" marked as done!\n")
+        print(f'\n  ✓ "{tasks[index]["title"]}" marked as done!\n')
 
 
 def cmd_remove(tasks: list) -> None:
@@ -262,18 +276,18 @@ def cmd_remove(tasks: list) -> None:
     if index is None:
         return
 
-    removed   = tasks.pop(index)
+    removed = tasks.pop(index)
     remaining = len(tasks)
-    print(f"\n  ✓ \"{removed['title']}\" removed. "
-          f"({remaining} task{'s' if remaining != 1 else ''} remaining)\n")
+    print(
+        f'\n  ✓ "{removed["title"]}" removed. '
+        f"({remaining} task{'s' if remaining != 1 else ''} remaining)\n"
+    )
 
 
 def cmd_filter(tasks: list) -> None:
     """Display tasks filtered by priority."""
     priority = prompt_valid(
-        "  Show priority (high/medium/low): ",
-        VALID_PRIORITIES,
-        "priority"
+        "  Show priority (high/medium/low): ", VALID_PRIORITIES, "priority"
     )
     filtered = get_tasks_by_priority(tasks, priority)
     if not filtered:
@@ -304,8 +318,10 @@ def cmd_quit(tasks: list) -> None:
     if stats["total"] == 0:
         print("  No tasks — clean slate. See you tomorrow.")
     else:
-        print(f"  {stats['done']}/{stats['total']} tasks completed "
-              f"({stats['rate']}%). Keep going!")
+        print(
+            f"  {stats['done']}/{stats['total']} tasks completed "
+            f"({stats['rate']}%). Keep going!"
+        )
     print()
 
 
@@ -314,14 +330,14 @@ def cmd_quit(tasks: list) -> None:
 # We will expand this pattern into a full CLI framework on Day 11.
 
 COMMANDS = {
-    "add":    "Add a new task",
-    "view":   "View all tasks",
-    "done":   "Mark a task as done",
+    "add": "Add a new task",
+    "view": "View all tasks",
+    "done": "Mark a task as done",
     "remove": "Remove a task",
     "filter": "Filter by priority",
     "search": "Search tasks by keyword",
-    "stats":  "View statistics dashboard",
-    "quit":   "Exit TaskFlow AI",
+    "stats": "View statistics dashboard",
+    "quit": "Exit TaskFlow AI",
 }
 
 
@@ -333,12 +349,35 @@ def display_help() -> None:
     print()
 
 
+def show_storage_info() -> None:
+    """Display file storage metadata."""
+
+    info = get_storage_info(DATA_FILE)
+    print("\n  ── Storage Info ──────────────────────")
+    if info["exists"]:
+        print(f"  File      : {info['filepath']}")
+        print(f"  Size      : {info['size_bytes']} bytes")
+        print(f"  Modified  : {info['last_modified']}")
+    else:
+        print("  No storage file found yet.")
+    print()
+
+
 # ─── Main ─────────────────────────────────────────────────
 
+
 def main() -> None:
-    """Entry point — initialise state and run the command loop."""
-    tasks   = []
-    next_id = [1]    # list wrapper to avoid 'global' keyword
+    """Entry point — load persisted tasks, run command loop, save on exit."""
+
+    # Load tasks from file
+    print("\n  Loading tasks from storage...")
+    tasks = load_tasks()
+    next_id = [get_next_id(tasks)]
+
+    if tasks:
+        print(f"  ✓ {len(tasks)} task{'s' if len(tasks) != 1 else ''} loaded.\n")
+    else:
+        print("  No saved tasks found. Starting fresh.\n")
 
     display_header()
     display_help()
@@ -360,9 +399,17 @@ def main() -> None:
             cmd_search(tasks)
         elif command == "stats":
             display_stats(tasks)
+        elif command == "backup":
+            backup_tasks()
+        elif command == "storage":
+            show_storage_info()
         elif command == "help":
             display_help()
         elif command == "quit":
+            # Save before quitting
+            print("\n  Saving tasks...")
+            if save_tasks(tasks):
+                print(f"  ✓ {len(tasks)} task{'s' if len(tasks) != 1 else ''} saved.")
             cmd_quit(tasks)
             break
         elif command == "":
