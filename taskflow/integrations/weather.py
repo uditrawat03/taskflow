@@ -166,3 +166,130 @@ if __name__ == "__main__":
         latitude=28.6139, longitude=77.2090, location_name="Delhi, IN"
     )
     display_weather(weather)
+
+
+def fetch_forecast(
+    latitude: float,
+    longitude: float,
+    location_name: str = "Your Location",
+    days: int = 3,
+) -> list[dict] | None:
+    """
+    Fetch a multi-day weather forecast.
+
+    Args:
+        latitude      (float): Location latitude.
+        longitude     (float): Location longitude.
+        location_name (str)  : Display name.
+        days          (int)  : Number of forecast days (1-7).
+
+    Returns:
+        list[dict] | None: List of daily forecast dicts, or None on failure.
+    """
+    params = {
+        "latitude": latitude,
+        "longitude": longitude,
+        "daily": ",".join(
+            [
+                "temperature_2m_max",
+                "temperature_2m_min",
+                "weather_code",
+                "precipitation_probability_max",
+            ]
+        ),
+        "forecast_days": days,
+        "timezone": "auto",
+    }
+
+    try:
+        response = requests.get(API_URL, params=params, timeout=TIMEOUT)
+        response.raise_for_status()
+        data = response.json()
+        daily = data.get("daily", {})
+
+        dates = daily.get("time", [])
+        max_temps = daily.get("temperature_2m_max", [])
+        min_temps = daily.get("temperature_2m_min", [])
+        codes = daily.get("weather_code", [])
+        rain_probs = daily.get("precipitation_probability_max", [])
+
+        forecast = []
+        for i in range(len(dates)):
+            code = codes[i] if i < len(codes) else 0
+            forecast.append(
+                {
+                    "date": dates[i],
+                    "max_temp": max_temps[i] if i < len(max_temps) else None,
+                    "min_temp": min_temps[i] if i < len(min_temps) else None,
+                    "condition": WMO_CODES.get(code, "Unknown"),
+                    "emoji": WMO_EMOJI.get(code, "🌡"),
+                    "rain_prob": rain_probs[i] if i < len(rain_probs) else None,
+                }
+            )
+
+        return forecast
+
+    except requests.exceptions.RequestException as e:
+        print(f"  ✗ Forecast fetch failed: {e}")
+        return None
+
+
+def display_forecast(forecast: list[dict], location_name: str) -> None:
+    """Display a formatted multi-day forecast table."""
+    if not forecast:
+        print("\n  Forecast not available.\n")
+        return
+
+    print(f"\n  ── {len(forecast)}-Day Forecast — {location_name} ─────────")
+
+    for i, day in enumerate(forecast):
+        # Parse and format the date
+        try:
+            dt = datetime.datetime.strptime(day["date"], "%Y-%m-%d")
+            if i == 0:
+                label = "Today     "
+            elif i == 1:
+                label = "Tomorrow  "
+            else:
+                label = dt.strftime("%a %d %b ")
+        except ValueError:
+            label = day["date"]
+
+        max_t = f"{day['max_temp']}°" if day["max_temp"] is not None else "N/A"
+        min_t = f"{day['min_temp']}°" if day["min_temp"] is not None else "N/A"
+        rain = f"💧{day['rain_prob']}%" if day["rain_prob"] is not None else ""
+
+        print(
+            f"  {label:<12} {max_t:>4}/{min_t:<4}  "
+            f"{day['emoji']}  {day['condition']:<20} {rain}"
+        )
+
+    print("  " + "─" * 52)
+    print()
+
+
+import time
+
+def get_with_rate_limit_handling(url: str, params: dict,
+                                  headers: dict, timeout: int = 10,
+                                  max_retries: int = 3) -> dict | None:
+    """
+    Make a GET request, automatically retrying on 429 (Too Many Requests).
+    """
+    for attempt in range(1, max_retries + 1):
+        response = requests.get(url, params=params,
+                                headers=headers, timeout=timeout)
+
+        if response.status_code == 429:
+            # Server told us to slow down
+            retry_after = int(response.headers.get("Retry-After", 60))
+            print(f"  ⚠ Rate limited. Waiting {retry_after}s "
+                  f"(attempt {attempt}/{max_retries})...")
+            time.sleep(retry_after)
+            continue
+
+        response.raise_for_status()
+        return response.json()
+
+    print("  ✗ Max retries exceeded.")
+    return None
