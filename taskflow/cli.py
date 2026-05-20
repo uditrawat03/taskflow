@@ -16,6 +16,8 @@ from .integrations.weather import (
 )
 from .display.renderer import display_tasks, display_stats_dashboard, display_header
 
+from taskflow.filters import TaskFilter
+
 
 def build_parser() -> argparse.ArgumentParser:
     """Build and return the full argument parser."""
@@ -111,18 +113,21 @@ def run_one_shot(args: argparse.Namespace, tasks: list[Task]) -> bool:
             print(f"\n  ✗ {e}")
 
     elif args.command == "view":
-        filtered = tasks[:]
+        results = TaskFilter(tasks)
         if args.priority:
-            filtered = [t for t in filtered if t.priority == args.priority]
+            results = results.by_priority(args.priority)
         if args.category:
-            filtered = [t for t in filtered if t.category == args.category]
+            results = results.by_category(args.category)
         if args.done:
-            filtered = [t for t in filtered if t.done]
+            results = results.done()
         if args.pending:
-            filtered = [t for t in filtered if not t.done]
+            results = results.pending()
         if args.overdue:
-            filtered = [t for t in filtered if t.is_overdue()]
-        display_tasks(filtered)
+            results = results.overdue()
+        if hasattr(args, "limit") and args.limit:
+            results = results.limit(args.limit)
+
+        display_tasks(results.get())
 
     elif args.command == "done":
         task = _find_by_id(tasks, args.id)
