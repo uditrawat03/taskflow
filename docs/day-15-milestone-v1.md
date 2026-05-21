@@ -429,7 +429,7 @@ the first 15 days of a 90-day Python & AI Engineering series. It demonstrates:
 
 ```bash
 # Clone the project
-git clone https://github.com/udit/taskflow
+git clone https://github.com/uditrawat03/taskflow
 cd taskflow
 
 # Create a virtual environment

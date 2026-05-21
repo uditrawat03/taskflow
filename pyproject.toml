@@ -46,8 +46,8 @@ ai = [
 taskflow = "taskflow.main:main"
 
 [project.urls]
-Homepage   = "https://github.com/udit/taskflow"
-Repository = "https://github.com/udit/taskflow"
+Homepage   = "https://github.com/uditrawat03/taskflow"
+Repository = "https://github.com/uditrawat03/taskflow"
 
 
 # ── Tool Configuration ────────────────────────────────────

@@ -19,7 +19,7 @@ A complete, reproducible dependency setup for TaskFlow AI — `requirements.txt`
 
 ```bash
 # The onboarding experience we are building toward:
-git clone https://github.com/udit/taskflow
+git clone https://github.com/uditrawat03/taskflow
 cd taskflow
 uv venv && uv pip install -e ".[dev]"
 python run.py
@@ -255,7 +255,7 @@ uv pip install -e ".[dev]"   # with dev extras
 
 ```bash
 # Full setup from scratch
-git clone https://github.com/udit/taskflow
+git clone https://github.com/uditrawat03/taskflow
 cd taskflow
 uv venv
 uv pip install -e ".[dev]"
@@ -321,8 +321,8 @@ ai = [
 taskflow = "taskflow.main:main"
 
 [project.urls]
-Homepage   = "https://github.com/udit/taskflow"
-Repository = "https://github.com/udit/taskflow"
+Homepage   = "https://github.com/uditrawat03/taskflow"
+Repository = "https://github.com/uditrawat03/taskflow"
 
 
 # ── Tool Configuration ────────────────────────────────────
