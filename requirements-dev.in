@@ -1,0 +1,12 @@
+# requirements-dev.in
+# Development and testing dependencies.
+# Run: pip-compile requirements-dev.in --output-file requirements-dev.txt
+
+-r requirements.in    # include production deps
+
+pytest>=8.0
+pytest-cov>=5.0
+black>=24.0
+ruff>=0.4
+mypy>=1.10
+pre-commit>=3.7

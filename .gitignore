@@ -1,0 +1,60 @@
+# .gitignore
+# TaskFlow AI
+
+# ── Virtual environments ──────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Python cache ──────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# ── Distribution / packaging ──────────────────────────────
+build/
+dist/
+*.egg-info/
+*.egg
+MANIFEST
+
+# ── Testing ───────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# ── Type checking ─────────────────────────────────────────
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ── IDE and editors ───────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ── OS files ──────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Application data ──────────────────────────────────────
+data/
+*.tmp
+taskflow_tasks*.json
+taskflow_backup_*.json
+
+# ── Secrets ───────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+secrets.py
+
+# ── Logs ──────────────────────────────────────────────────
+*.log
+logs/

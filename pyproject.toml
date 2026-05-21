@@ -1,0 +1,108 @@
+# pyproject.toml
+# TaskFlow AI — project definition and tool configuration.
+
+[build-system]
+requires      = ["setuptools>=70", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+
+# ── Project Metadata ──────────────────────────────────────
+
+[project]
+name        = "taskflow-ai"
+version     = "1.0.0"
+description = "Intelligent task management from the terminal — 90-day Python series"
+readme      = "README.md"
+license     = { text = "MIT" }
+authors     = [{ name = "Udit Rawat", email = "udit@example.com" }]
+keywords    = ["tasks", "productivity", "ai", "cli"]
+
+requires-python = ">=3.14"
+
+# Production dependencies — these are what pip/uv installs by default
+dependencies = [
+    "requests>=2.28",
+]
+
+# Optional dependency groups
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "black>=24.0",
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "pre-commit>=3.7",
+    "pip-tools>=7.0",
+]
+ai = [
+    # Added in Phase 4 — placeholder for now
+    # "anthropic>=0.25",
+    # "openai>=1.30",
+]
+
+# Entry point — makes `taskflow` a runnable command after install
+[project.scripts]
+taskflow = "taskflow.main:main"
+
+[project.urls]
+Homepage   = "https://github.com/udit/taskflow"
+Repository = "https://github.com/udit/taskflow"
+
+
+# ── Tool Configuration ────────────────────────────────────
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["taskflow*"]
+
+# Black — code formatter
+[tool.black]
+line-length    = 88
+target-version = ["py314"]
+
+# Ruff — fast linter (replaces flake8, isort, and more)
+[tool.ruff]
+line-length = 88
+target-version = "py314"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort (import sorting)
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade — modern Python idioms
+]
+ignore = [
+    "E501",  # line too long — handled by black
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]  # allow assert in tests
+
+# Mypy — static type checker
+[tool.mypy]
+python_version         = "3.14"
+strict                 = false
+warn_return_any        = true
+warn_unused_configs    = true
+ignore_missing_imports = true
+
+# Pytest — test runner
+[tool.pytest.ini_options]
+testpaths    = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts      = "-v --tb=short"
+
+# Coverage
+[tool.coverage.run]
+source = ["taskflow"]
+omit   = ["tests/*", "run.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false

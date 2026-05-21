@@ -1,0 +1,5 @@
+# requirements.in
+# Direct production dependencies only.
+# Run: pip-compile requirements.in --output-file requirements.txt
+
+requests>=2.28
