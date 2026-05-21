@@ -1,6 +1,16 @@
+# taskflow/core/task.py
+# TaskFlow AI — Task base class.
+# Replaces plain task dictionaries introduced on Day 05.
+#
+# Version history:
+#   Day 05 — tasks stored as plain dicts
+#   Day 12 — Task class introduced; replaces dicts throughout
+
 import datetime
 from ..config import VALID_PRIORITIES, VALID_CATEGORIES, DATE_FMT
 from ..errors import ValidationError
+
+__all__ = ["Task"]
 
 
 class Task:
@@ -8,19 +18,21 @@ class Task:
     Represents a single task in TaskFlow AI.
 
     Attributes:
-        id         (int)  : Unique identifier, auto-assigned.
-        title      (str)  : Task description.
-        priority   (str)  : One of 'high', 'medium', 'low'.
-        category   (str)  : One of the valid categories.
+        id         (int)  : Unique identifier, auto-assigned via class counter.
+        title      (str)  : Task description (1–200 characters).
+        priority   (str)  : One of 'high', 'medium', 'low'. Validated via property.
+        category   (str)  : One of VALID_CATEGORIES. Validated via property.
         status     (str)  : 'pending' or 'done'.
-        done       (bool) : True if the task is completed.
-        created_at (str)  : ISO-style timestamp string.
+        done       (bool) : True when the task is completed.
+        created_at (str)  : Timestamp string in DATE_FMT format.
 
     Class Attributes:
-        _id_counter (int) : Auto-incrementing ID counter (shared across all instances).
+        _id_counter (int): Auto-incrementing ID shared across all instances.
     """
 
     _id_counter: int = 0
+
+    # ── Constructor ───────────────────────────────────────
 
     def __init__(
         self,
@@ -30,41 +42,57 @@ class Task:
         task_id: int | None = None,
     ):
         """
-        Create a new Task instance.
+        Create a new Task.
 
         Args:
             title    (str)       : Task title. Must not be empty.
             priority (str)       : Task priority. Defaults to 'medium'.
             category (str)       : Task category. Defaults to 'general'.
-            task_id  (int | None): Explicit ID (used when loading from storage).
-                                   If None, auto-increments the class counter.
+            task_id  (int|None)  : Explicit ID (used when loading from storage).
+                                   Auto-increments class counter if None.
+
+        Raises:
+            ValidationError: If title is empty/too long, priority or
+                             category is invalid.
         """
-        # ── Validate ──────────────────────────────────────
+        # Normalise
         title = title.strip()
         priority = priority.strip().lower()
         category = category.strip().lower()
 
+        # Validate
         if not title:
-            raise ValidationError("Title cannot be empty", field="title", value=title)
+            raise ValidationError("Title cannot be empty.", field="title", value=title)
         if len(title) > 200:
             raise ValidationError(
-                "Title too long (max 200 chars)", field="title", value=len(title)
+                "Title too long (max 200 chars).",
+                field="title",
+                value=len(title),
             )
         if priority not in VALID_PRIORITIES:
-            raise ValidationError(f"Invalid priority", field="priority", value=priority)
-        if category not in VALID_CATEGORIES:
-            raise ValidationError(f"Invalid category", field="category", value=category)
+            raise ValidationError(
+                f"Invalid priority '{priority}'. "
+                f"Choose from: {', '.join(sorted(VALID_PRIORITIES))}",
+                field="priority",
+                value=priority,
+            )
+        if category not in VALID_CATEGORIES and category != "general":
+            raise ValidationError(
+                f"Invalid category '{category}'. "
+                f"Choose from: {', '.join(sorted(VALID_CATEGORIES))}",
+                field="category",
+                value=category,
+            )
 
-        # ── Assign ID ─────────────────────────────────────
+        # Assign ID
         if task_id is not None:
             self.id = task_id
-            # Keep counter ahead of any explicitly assigned ID
             Task._id_counter = max(Task._id_counter, task_id)
         else:
             Task._id_counter += 1
             self.id = Task._id_counter
 
-        # ── Set Attributes ────────────────────────────────
+        # Set attributes
         self.title = title
         self._priority = priority
         self._category = category
@@ -76,52 +104,85 @@ class Task:
 
     @property
     def priority(self) -> str:
+        """Current priority string."""
         return self._priority
 
     @priority.setter
     def priority(self, value: str) -> None:
+        """Set priority with validation."""
         value = value.strip().lower()
         if value not in VALID_PRIORITIES:
-            raise ValidationError("Invalid priority", field="priority", value=value)
+            raise ValidationError(
+                f"Invalid priority '{value}'.",
+                field="priority",
+                value=value,
+            )
         self._priority = value
 
     @property
     def category(self) -> str:
+        """Current category string."""
         return self._category
 
     @category.setter
     def category(self, value: str) -> None:
+        """Set category with validation."""
         value = value.strip().lower()
         if value not in VALID_CATEGORIES:
-            raise ValidationError("Invalid category", field="category", value=value)
+            raise ValidationError(
+                f"Invalid category '{value}'.",
+                field="category",
+                value=value,
+            )
         self._category = value
 
     @property
     def priority_score(self) -> int:
-        """Numeric priority for sorting. High=3, Medium=2, Low=1."""
+        """Numeric score for sorting: high=3, medium=2, low=1."""
         return {"high": 3, "medium": 2, "low": 1}.get(self._priority, 0)
 
     # ── Instance Methods ──────────────────────────────────
 
     def mark_done(self) -> "Task":
         """
-        Mark the task as completed.
+        Mark this task as completed.
 
         Returns:
-            Task: self — allows method chaining.
+            Task: self — enables method chaining.
         """
         self.done = True
         self.status = "done"
         return self
 
     def mark_pending(self) -> "Task":
-        """Re-open a completed task."""
+        """Re-open a completed task back to pending."""
         self.done = False
         self.status = "pending"
         return self
 
+    def rename(self, new_title: str) -> "Task":
+        """
+        Update the task title with validation.
+
+        Args:
+            new_title (str): The replacement title.
+
+        Returns:
+            Task: self — enables method chaining.
+
+        Raises:
+            ValidationError: If new_title is empty.
+        """
+        new_title = new_title.strip()
+        if not new_title:
+            raise ValidationError(
+                "Title cannot be empty.", field="title", value=new_title
+            )
+        self.title = new_title
+        return self
+
     def is_pending(self) -> bool:
-        """Return True if the task is not yet done."""
+        """Return True if the task has not been completed."""
         return not self.done
 
     def matches(self, keyword: str) -> bool:
@@ -132,38 +193,27 @@ class Task:
         """Return how many days ago this task was created."""
         try:
             created = datetime.datetime.strptime(self.created_at, DATE_FMT)
-            delta = datetime.datetime.now() - created
-            return delta.days
+            return (datetime.datetime.now() - created).days
         except ValueError:
             return 0
 
     def is_overdue(self, threshold_days: int = 7) -> bool:
         """
-        Return True if the task is older than threshold_days and still pending.
+        Return True if this task is pending and older than threshold_days.
 
         Args:
-            threshold_days (int): Number of days before a task is considered overdue.
+            threshold_days (int): Days after which a pending task is overdue.
         """
         return self.is_pending() and self.age_days() >= threshold_days
 
-    def rename(self, new_title: str) -> "Task":
-        """Update the task title with validation."""
-        new_title = new_title.strip()
-        if not new_title:
-            raise ValidationError(
-                "Title cannot be empty", field="title", value=new_title
-            )
-        self.title = new_title
-        return self
-
-    # ── Serialization ─────────────────────────────────────
+    # ── Serialisation ─────────────────────────────────────
 
     def to_dict(self) -> dict:
         """
-        Convert the Task to a dictionary for JSON serialization.
+        Serialise the Task to a plain dictionary for JSON storage.
 
         Returns:
-            dict: All task fields as a plain dictionary.
+            dict: All task fields as JSON-serialisable types.
         """
         return {
             "id": self.id,
@@ -173,15 +223,19 @@ class Task:
             "status": self.status,
             "done": self.done,
             "created_at": self.created_at,
+            "type": "standard",
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> "Task":
         """
-        Create a Task instance from a dictionary (e.g., loaded from JSON).
+        Create a Task from a stored dictionary.
+
+        Bypasses __init__ validation so that previously stored data
+        (which was already validated on creation) can be restored as-is.
 
         Args:
-            data (dict): A task dictionary, typically from JSON storage.
+            data (dict): A task dictionary from JSON storage.
 
         Returns:
             Task: A fully populated Task instance.
@@ -194,26 +248,28 @@ class Task:
         task.status = data.get("status", "pending")
         task.done = data.get("done", False)
         task.created_at = data.get("created_at", "")
-        # Keep class counter ahead of loaded IDs
+        # Keep class counter ahead of any loaded IDs
         Task._id_counter = max(Task._id_counter, task.id)
         return task
 
+    # ── Class / Static Methods ────────────────────────────
+
     @staticmethod
     def priority_to_score(priority: str) -> int:
-        """Convert a priority string to a numeric score for sorting."""
+        """Convert a priority string to a numeric sort score."""
         return {"high": 3, "medium": 2, "low": 1}.get(priority.lower(), 0)
 
     @classmethod
     def reset_counter(cls) -> None:
-        """Reset the ID counter. Use only in tests."""
+        """Reset the ID counter to 0. Use ONLY in tests."""
         cls._id_counter = 0
 
     # ── Dunder Methods ────────────────────────────────────
 
     def __str__(self) -> str:
-        status = "✓" if self.done else "○"
+        mark = "✓" if self.done else "○"
         return (
-            f"{status} Task #{self.id} "
+            f"{mark} Task #{self.id} "
             f"[{self._priority.upper()}] "
             f"{self.title} "
             f"({self._category})"
@@ -233,15 +289,13 @@ class Task:
         return self.id == other.id
 
     def __lt__(self, other: "Task") -> bool:
-        """Enable sorting by priority score (high first), then by ID."""
+        """Sort by priority score descending, then by ID ascending."""
         if not isinstance(other, Task):
             return NotImplemented
         if self.priority_score != other.priority_score:
-            return (
-                self.priority_score > other.priority_score
-            )  # higher score = comes first
+            return self.priority_score > other.priority_score
         return self.id < other.id
 
     def __hash__(self) -> int:
-        """Make Task hashable so it can be used in sets and as dict keys."""
+        """Make Task hashable — enables use in sets and as dict keys."""
         return hash(self.id)

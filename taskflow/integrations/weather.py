@@ -1,13 +1,39 @@
+# taskflow/integrations/weather.py
+# TaskFlow AI — Weather integration using Open-Meteo API.
+# No API key required.
+#
+# Version history:
+#   Day 09 — initial weather fetch
+#   Day 14 — forecast endpoint added
+#   Day 18 — file-based cache added (TTL = 10 minutes)
+
+import json
+import time
+import datetime
 import requests
-from datetime import datetime
+from pathlib import Path
 
-# ─── Configuration ────────────────────────────────────────
-API_URL = "https://api.open-meteo.com/v1/forecast"
-TIMEOUT = 10  # seconds
+from ..config import (
+    WEATHER_API_URL,
+    WEATHER_TIMEOUT,
+    WEATHER_CACHE_TTL,
+    DATA_DIR,
+    DATE_FMT,
+)
 
-# Weather condition codes → human-readable descriptions
-# Full list: https://open-meteo.com/en/docs#weathervariables
-WMO_CODES = {
+__all__ = [
+    "fetch_weather",
+    "display_weather",
+    "fetch_forecast",
+    "display_forecast",
+    "get_weather_summary",
+]
+
+# ── Cache config ──────────────────────────────────────────
+_CACHE_FILE = DATA_DIR / "weather_cache.json"
+
+# ── WMO weather code mappings ─────────────────────────────
+WMO_CODES: dict[int, str] = {
     0: "Clear sky",
     1: "Mainly clear",
     2: "Partly cloudy",
@@ -30,7 +56,7 @@ WMO_CODES = {
     96: "Thunderstorm + hail",
 }
 
-WMO_EMOJI = {
+WMO_EMOJI: dict[int, str] = {
     0: "☀",
     1: "🌤",
     2: "⛅",
@@ -53,21 +79,48 @@ WMO_EMOJI = {
     96: "⛈",
 }
 
+HEADERS = {
+    "User-Agent": "TaskFlowAI/1.1 (github.com/udit/taskflow)",
+    "Accept": "application/json",
+}
 
-def fetch_weather(
-    latitude: float, longitude: float, location_name: str = "Your Location"
+
+# ─── Cache helpers ────────────────────────────────────────
+
+
+def _load_cache() -> dict | None:
+    """Return cached weather dict if still within TTL, else None."""
+    if not _CACHE_FILE.exists():
+        return None
+    try:
+        raw = json.loads(_CACHE_FILE.read_text(encoding="utf-8"))
+        age = time.time() - raw.get("fetched_at", 0)
+        if age < WEATHER_CACHE_TTL:
+            return raw.get("weather")
+    except Exception:
+        pass
+    return None
+
+
+def _save_cache(weather: dict) -> None:
+    """Persist weather data to the cache file."""
+    try:
+        _CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _CACHE_FILE.write_text(
+            json.dumps({"fetched_at": time.time(), "weather": weather}, indent=2),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass  # cache failure is never critical
+
+
+# ─── Current weather ──────────────────────────────────────
+
+
+def _do_fetch_weather(
+    latitude: float, longitude: float, location_name: str
 ) -> dict | None:
-    """
-    Fetch current weather from the Open-Meteo API.
-
-    Args:
-        latitude      (float): Location latitude.
-        longitude     (float): Location longitude.
-        location_name (str)  : Display name for the location.
-
-    Returns:
-        dict | None: Parsed weather data, or None if the request failed.
-    """
+    """Make the actual API request for current weather."""
     params = {
         "latitude": latitude,
         "longitude": longitude,
@@ -84,15 +137,17 @@ def fetch_weather(
         "wind_speed_unit": "kmh",
         "timezone": "auto",
     }
-
     try:
-        response = requests.get(API_URL, params=params, timeout=TIMEOUT)
-        response.raise_for_status()  # raises HTTPError for 4xx/5xx responses
-        data = response.json()
+        resp = requests.get(
+            WEATHER_API_URL,
+            params=params,
+            headers=HEADERS,
+            timeout=WEATHER_TIMEOUT,
+        )
+        resp.raise_for_status()
+        data = resp.json()
         current = data.get("current", {})
-
         code = current.get("weather_code", 0)
-
         return {
             "location": location_name,
             "temperature": current.get("temperature_2m"),
@@ -101,71 +156,81 @@ def fetch_weather(
             "wind_speed": current.get("wind_speed_10m"),
             "condition": WMO_CODES.get(code, "Unknown"),
             "emoji": WMO_EMOJI.get(code, "🌡"),
-            "fetched_at": datetime.now().strftime("%H:%M"),
+            "fetched_at": datetime.datetime.now().strftime("%H:%M"),
         }
-
     except requests.exceptions.ConnectionError:
         print("  ✗ No internet connection — weather unavailable.")
-        return None
     except requests.exceptions.Timeout:
         print("  ✗ Weather request timed out.")
-        return None
     except requests.exceptions.HTTPError as e:
         print(f"  ✗ Weather API error: {e}")
-        return None
-    except (KeyError, ValueError) as e:
+    except Exception as e:
         print(f"  ✗ Could not parse weather response: {e}")
-        return None
+    return None
 
 
-def display_weather(weather: dict) -> None:
+def fetch_weather(
+    latitude: float,
+    longitude: float,
+    location_name: str = "Your Location",
+    use_cache: bool = True,
+) -> dict | None:
     """
-    Pretty-print weather data to the terminal.
+    Fetch current weather. Returns cached data if within TTL.
 
     Args:
-        weather (dict): Weather data from fetch_weather().
+        latitude      (float): Location latitude.
+        longitude     (float): Location longitude.
+        location_name (str)  : Display name for the location.
+        use_cache     (bool) : Return cached data if fresh. Default True.
+
+    Returns:
+        dict | None: Weather data dict, or None on failure.
     """
-    if weather is None:
+    if use_cache:
+        cached = _load_cache()
+        if cached:
+            return cached
+
+    weather = _do_fetch_weather(latitude, longitude, location_name)
+    if weather:
+        _save_cache(weather)
+    return weather
+
+
+def display_weather(weather: dict | None) -> None:
+    """Pretty-print current weather to the terminal."""
+    if not weather:
         print("\n  Weather data not available.\n")
         return
 
     print()
     print("  ── Current Weather ──────────────────────")
-    print(f"  Location    : {weather['location']}")
+    print(f"  Location    : {weather.get('location', 'Unknown')}")
     print(
-        f"  Temperature : {weather['temperature']}°C "
-        f"(feels like {weather['feels_like']}°C)"
+        f"  Temperature : {weather.get('temperature')}°C "
+        f"(feels like {weather.get('feels_like')}°C)"
     )
-    print(f"  Condition   : {weather['emoji']}  {weather['condition']}")
-    print(f"  Humidity    : {weather['humidity']}%")
-    print(f"  Wind        : {weather['wind_speed']} km/h")
-    print(f"  Updated     : {weather['fetched_at']}")
-    print("  ────────────────────────────────────────")
+    print(f"  Condition   : {weather.get('emoji')}  {weather.get('condition')}")
+    print(f"  Humidity    : {weather.get('humidity')}%")
+    print(f"  Wind        : {weather.get('wind_speed')} km/h")
+    print(f"  Updated     : {weather.get('fetched_at')}")
+    print("  ─────────────────────────────────────────")
     print()
 
 
-def get_weather_summary(weather: dict) -> str:
-    """
-    Return a one-line weather summary for the app header.
-
-    Args:
-        weather (dict): Weather data from fetch_weather().
-
-    Returns:
-        str: Compact weather string, e.g. "38°C ☀ Clear sky"
-    """
-    if weather is None:
+def get_weather_summary(weather: dict | None) -> str:
+    """Return a compact one-line weather string for the app header."""
+    if not weather:
         return "Weather unavailable"
-    return f"{weather['temperature']}°C {weather['emoji']} {weather['condition']}"
-
-
-# ─── Quick test ───────────────────────────────────────────
-if __name__ == "__main__":
-    print("Fetching weather for Delhi...")
-    weather = fetch_weather(
-        latitude=28.6139, longitude=77.2090, location_name="Delhi, IN"
+    return (
+        f"{weather.get('temperature')}°C "
+        f"{weather.get('emoji', '')} "
+        f"{weather.get('condition', '')}"
     )
-    display_weather(weather)
+
+
+# ─── Forecast ─────────────────────────────────────────────
 
 
 def fetch_forecast(
@@ -181,10 +246,10 @@ def fetch_forecast(
         latitude      (float): Location latitude.
         longitude     (float): Location longitude.
         location_name (str)  : Display name.
-        days          (int)  : Number of forecast days (1-7).
+        days          (int)  : Number of forecast days (1–7).
 
     Returns:
-        list[dict] | None: List of daily forecast dicts, or None on failure.
+        list[dict] | None: Daily forecast dicts, or None on failure.
     """
     params = {
         "latitude": latitude,
@@ -200,18 +265,22 @@ def fetch_forecast(
         "forecast_days": days,
         "timezone": "auto",
     }
-
     try:
-        response = requests.get(API_URL, params=params, timeout=TIMEOUT)
-        response.raise_for_status()
-        data = response.json()
+        resp = requests.get(
+            WEATHER_API_URL,
+            params=params,
+            headers=HEADERS,
+            timeout=WEATHER_TIMEOUT,
+        )
+        resp.raise_for_status()
+        data = resp.json()
         daily = data.get("daily", {})
 
         dates = daily.get("time", [])
         max_temps = daily.get("temperature_2m_max", [])
         min_temps = daily.get("temperature_2m_min", [])
         codes = daily.get("weather_code", [])
-        rain_probs = daily.get("precipitation_probability_max", [])
+        rain_prob = daily.get("precipitation_probability_max", [])
 
         forecast = []
         for i in range(len(dates)):
@@ -223,27 +292,33 @@ def fetch_forecast(
                     "min_temp": min_temps[i] if i < len(min_temps) else None,
                     "condition": WMO_CODES.get(code, "Unknown"),
                     "emoji": WMO_EMOJI.get(code, "🌡"),
-                    "rain_prob": rain_probs[i] if i < len(rain_probs) else None,
+                    "rain_prob": rain_prob[i] if i < len(rain_prob) else None,
                 }
             )
-
         return forecast
 
-    except requests.exceptions.RequestException as e:
-        print(f"  ✗ Forecast fetch failed: {e}")
-        return None
+    except requests.exceptions.ConnectionError:
+        print("  ✗ No internet connection — forecast unavailable.")
+    except requests.exceptions.Timeout:
+        print("  ✗ Forecast request timed out.")
+    except Exception as e:
+        print(f"  ✗ Could not fetch forecast: {e}")
+    return None
 
 
-def display_forecast(forecast: list[dict], location_name: str) -> None:
+def display_forecast(forecast: list[dict] | None, location_name: str = "") -> None:
     """Display a formatted multi-day forecast table."""
     if not forecast:
         print("\n  Forecast not available.\n")
         return
 
-    print(f"\n  ── {len(forecast)}-Day Forecast — {location_name} ─────────")
+    header = f"  ── {len(forecast)}-Day Forecast"
+    if location_name:
+        header += f" — {location_name}"
+    print()
+    print(header + " " + "─" * max(0, 50 - len(header)))
 
     for i, day in enumerate(forecast):
-        # Parse and format the date
         try:
             dt = datetime.datetime.strptime(day["date"], "%Y-%m-%d")
             if i == 0:
@@ -253,43 +328,17 @@ def display_forecast(forecast: list[dict], location_name: str) -> None:
             else:
                 label = dt.strftime("%a %d %b ")
         except ValueError:
-            label = day["date"]
+            label = day.get("date", "")
 
-        max_t = f"{day['max_temp']}°" if day["max_temp"] is not None else "N/A"
-        min_t = f"{day['min_temp']}°" if day["min_temp"] is not None else "N/A"
-        rain = f"💧{day['rain_prob']}%" if day["rain_prob"] is not None else ""
+        max_t = f"{day['max_temp']}°" if day.get("max_temp") is not None else "N/A"
+        min_t = f"{day['min_temp']}°" if day.get("min_temp") is not None else "N/A"
+        rain = f"💧{day['rain_prob']}%" if day.get("rain_prob") is not None else ""
 
         print(
-            f"  {label:<12} {max_t:>4}/{min_t:<4}  "
-            f"{day['emoji']}  {day['condition']:<20} {rain}"
+            f"  {label:<12} {max_t:>4}/{min_t:<5}  "
+            f"{day.get('emoji', '')}  "
+            f"{day.get('condition', ''):<22} {rain}"
         )
 
     print("  " + "─" * 52)
     print()
-
-
-import time
-
-def get_with_rate_limit_handling(url: str, params: dict,
-                                  headers: dict, timeout: int = 10,
-                                  max_retries: int = 3) -> dict | None:
-    """
-    Make a GET request, automatically retrying on 429 (Too Many Requests).
-    """
-    for attempt in range(1, max_retries + 1):
-        response = requests.get(url, params=params,
-                                headers=headers, timeout=timeout)
-
-        if response.status_code == 429:
-            # Server told us to slow down
-            retry_after = int(response.headers.get("Retry-After", 60))
-            print(f"  ⚠ Rate limited. Waiting {retry_after}s "
-                  f"(attempt {attempt}/{max_retries})...")
-            time.sleep(retry_after)
-            continue
-
-        response.raise_for_status()
-        return response.json()
-
-    print("  ✗ Max retries exceeded.")
-    return None

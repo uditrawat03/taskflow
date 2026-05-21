@@ -1,34 +1,39 @@
 # taskflow/main.py
-# TaskFlow AI — Day 11
-# Application entry point.
-# Orchestrates startup: load tasks, fetch weather, launch shell or CLI.
+# TaskFlow AI — Application entry point.
+#
+# Thin orchestration layer:
+#   1. Parse command-line arguments
+#   2. Load tasks from JSON storage
+#   3. Handle storage errors gracefully
+#   4. Fetch weather (non-critical)
+#   5. Render header
+#   6. Dispatch to CLI (one-shot) or shell (interactive)
+#
+# Version history:
+#   Day 04 — inline in tasks.py
+#   Day 11 — extracted to main.py (Day 11 supplement)
+#   Day 15 — argparse + dual-mode dispatch added (cli.py)
 
-from .config  import USER_LATITUDE, USER_LONGITUDE, USER_LOCATION
-from .errors  import StorageError
+from .config import USER_LATITUDE, USER_LONGITUDE, USER_LOCATION
+from .errors import StorageError
 from .storage.json_store import load_tasks_safe, backup_tasks
-from .display.renderer   import display_header
+from .display.renderer import display_header
+
+__all__ = ["main"]
 
 
 def main() -> None:
     """
     TaskFlow AI entry point.
 
-    Responsibilities:
-    1. Parse command-line arguments (if any)
-    2. Load persisted tasks from JSON storage
-    3. Handle storage errors gracefully (backup + fresh start)
-    4. Fetch weather data for the header
-    5. Dispatch to CLI one-shot mode OR interactive shell
-
-    This function is kept intentionally thin — each concern is
-    delegated to the appropriate module.
+    Supports two modes:
+        Interactive: python run.py
+        One-shot:    python run.py add "Review PR #high @work"
+                     python run.py view --priority high
     """
-
-    # ── Parse arguments ───────────────────────────────────
-    # Full argparse integration arrives on Day 15.
-    # For Day 11, we use a minimal argument check.
     import sys
-    args       = sys.argv[1:]
+
+    args = sys.argv[1:]
     no_weather = "--no-weather" in args
 
     # ── Load tasks ────────────────────────────────────────
@@ -38,11 +43,11 @@ def main() -> None:
 
     if load_error:
         print(f"\n  ⚠  {load_error}")
-        print("  Creating a backup and starting with an empty task list.")
+        print("  Creating backup and starting fresh.\n")
         try:
             backup_tasks()
         except Exception:
-            pass   # backup failure is never critical — continue
+            pass  # backup failure is never critical
         tasks = []
     else:
         count = len(tasks)
@@ -53,19 +58,34 @@ def main() -> None:
     if not no_weather:
         try:
             from .integrations.weather import fetch_weather
-            weather = fetch_weather(
-                USER_LATITUDE, USER_LONGITUDE, USER_LOCATION
-            )
-        except Exception:
-            weather = None   # weather is non-critical — never crash for it
 
-    # ── Display header ────────────────────────────────────
+            weather = fetch_weather(USER_LATITUDE, USER_LONGITUDE, USER_LOCATION)
+        except Exception:
+            weather = None  # weather is never critical
+
+    # ── Render header ─────────────────────────────────────
     display_header(weather)
 
-    # ── Launch shell or CLI ───────────────────────────────
-    # Day 15 replaces this block with full argparse + dual-mode dispatch.
-    # For now, always launch the interactive shell.
+    # ── Dispatch ──────────────────────────────────────────
+    # Full argparse + dual-mode dispatch lives in cli.py (Day 15).
+    # Check if any non-flag arguments were passed — if so, try CLI dispatch.
+    non_flag_args = [a for a in args if not a.startswith("--")]
+
+    if non_flag_args:
+        # One-shot CLI mode
+        try:
+            from .cli import build_parser, run_one_shot
+
+            parser = build_parser()
+            parsed = parser.parse_args(args)
+            if run_one_shot(parsed, tasks):
+                return
+        except ImportError:
+            pass  # cli.py not available yet — fall through to shell
+
+    # Interactive shell mode
     from .shell import run_interactive_shell
+
     run_interactive_shell(tasks)
 
 

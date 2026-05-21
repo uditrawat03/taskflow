@@ -1,3 +1,17 @@
+# taskflow/storage/json_store.py
+# TaskFlow AI — JSON-based task persistence.
+#
+# Storage format: a JSON array of task dictionaries.
+# Uses an atomic write pattern (write to .tmp, then rename)
+# so the data file is never left in a partially-written state.
+#
+# Version history:
+#   Day 08 — pipe-separated text storage
+#   Day 09 — migrated to JSON
+#   Day 10 — StorageError hierarchy, load_tasks_safe() added
+#   Day 11 — moved into storage/ subpackage (Day 11 supplement)
+#   Day 12 — save/load now handle Task objects via to_dict/from_dict
+
 import json
 import shutil
 import datetime
@@ -5,53 +19,69 @@ from pathlib import Path
 
 from ..config import DATA_FILE, DATE_FMT
 from ..errors import StorageError
+from ..core.task_factory import task_from_dict
+from ..core.task         import Task
+
+__all__ = [
+    "save_tasks",
+    "load_tasks",
+    "load_tasks_safe",
+    "backup_tasks",
+    "get_next_id",
+    "get_storage_info",
+]
 
 
-
-# ─── Core Operations ──────────────────────────────────────
-
+# ─── Save ─────────────────────────────────────────────────
 
 def save_tasks(tasks: list, filepath: Path = DATA_FILE) -> None:
     """
-    Save a list of task dictionaries to a JSON file.
+    Persist a list of Task objects (or dicts) to a JSON file.
 
-    Uses an atomic write pattern — writes to a .tmp file first, then
-    renames it over the target file so the data file is never left
-    in a partially-written state.
+    Uses an atomic write: writes to a .tmp file first, then renames
+    it over the target path — the data file is never half-written.
 
     Args:
-        tasks    (list): List of task dictionaries to persist.
+        tasks    (list): Task objects or plain dicts to save.
         filepath (Path): Destination JSON file. Defaults to DATA_FILE.
 
     Raises:
         StorageError: If the file cannot be written.
     """
-    # Ensure the data directory exists
     filepath.parent.mkdir(parents=True, exist_ok=True)
+    tmp = filepath.with_suffix(".tmp")
 
-    tmp_path = filepath.with_suffix(".tmp")
     try:
-        with open(tmp_path, "w", encoding="utf-8") as f:
-            json.dump(tasks, f, indent=2, ensure_ascii=False)
-        tmp_path.rename(filepath)  # atomic replace on most filesystems
+        # Serialise — convert Task objects to dicts
+        data = [
+            t.to_dict() if isinstance(t, Task) else t
+            for t in tasks
+        ]
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        tmp.rename(filepath)   # atomic replace on most filesystems
     except (OSError, TypeError) as e:
-        # Clean up temp file if it was created
-        if tmp_path.exists():
-            tmp_path.unlink()
-        raise StorageError(f"Could not save tasks to '{filepath}': {e}") from e
+        if tmp.exists():
+            tmp.unlink()
+        raise StorageError(
+            f"Could not save tasks to '{filepath.name}': {e}"
+        ) from e
 
 
-def load_tasks(filepath: Path = DATA_FILE) -> list:
+# ─── Load ─────────────────────────────────────────────────
+
+def load_tasks(filepath: Path = DATA_FILE) -> list[Task]:
     """
-    Load task dictionaries from a JSON file.
+    Load Task objects from a JSON file.
 
-    Returns an empty list if the file does not exist yet (first run).
+    Returns an empty list if the file does not exist (first run).
+    Uses task_from_dict to restore the correct subclass for each task.
 
     Args:
         filepath (Path): Source JSON file. Defaults to DATA_FILE.
 
     Returns:
-        list: List of task dictionaries loaded from the file.
+        list[Task]: Loaded Task instances (correct subclass for each).
 
     Raises:
         StorageError: If the file exists but cannot be read or parsed.
@@ -65,10 +95,12 @@ def load_tasks(filepath: Path = DATA_FILE) -> list:
     except json.JSONDecodeError as e:
         raise StorageError(
             f"Storage file '{filepath.name}' contains invalid JSON "
-            f"(line {e.lineno}, col {e.colno}): {e.msg}"
+            f"(line {e.lineno}, col {e.colno})."
         ) from e
     except OSError as e:
-        raise StorageError(f"Could not read storage file '{filepath}': {e}") from e
+        raise StorageError(
+            f"Could not read storage file '{filepath.name}': {e}"
+        ) from e
 
     if not isinstance(data, list):
         raise StorageError(
@@ -76,22 +108,18 @@ def load_tasks(filepath: Path = DATA_FILE) -> list:
             f"expected a JSON array, got {type(data).__name__}."
         )
 
-    return data
+    return [task_from_dict(d) for d in data]
 
 
-def load_tasks_safe(filepath: Path = DATA_FILE) -> tuple[list, str | None]:
+def load_tasks_safe(
+    filepath: Path = DATA_FILE,
+) -> tuple[list[Task], str | None]:
     """
-    Load tasks without raising — returns (tasks, error_message).
-
-    Use in entry points where you want to handle errors inline rather
-    than propagating exceptions up the call stack.
-
-    Args:
-        filepath (Path): Source JSON file. Defaults to DATA_FILE.
+    Load tasks without raising exceptions.
 
     Returns:
         tuple: (task_list, None) on success,
-               ([], error_message_string) on failure.
+               ([], error_message) on failure.
     """
     try:
         tasks = load_tasks(filepath)
@@ -100,44 +128,44 @@ def load_tasks_safe(filepath: Path = DATA_FILE) -> tuple[list, str | None]:
         return [], str(e)
 
 
+# ─── Helpers ──────────────────────────────────────────────
+
 def get_next_id(tasks: list) -> int:
     """
-    Calculate the next available task ID from a loaded task list.
-
-    Finds the maximum existing ID and adds 1. Returns 1 if the list
-    is empty.
+    Return the next available task ID.
 
     Args:
-        tasks (list): List of task dictionaries (must have 'id' key).
+        tasks (list): Current list of Task objects or dicts.
 
     Returns:
-        int: The next available task ID.
+        int: max(existing IDs) + 1, or 1 if list is empty.
     """
-    return max((t.get("id", 0) for t in tasks), default=0) + 1
+    ids = [
+        (t.id if isinstance(t, Task) else t.get("id", 0))
+        for t in tasks
+    ]
+    return max(ids, default=0) + 1
 
 
 # ─── Backup ───────────────────────────────────────────────
 
-
 def backup_tasks(filepath: Path = DATA_FILE) -> bool:
     """
-    Create a timestamped backup copy of the storage file.
+    Create a timestamped backup of the storage file.
 
-    The backup is saved in the same directory as the original,
-    with a timestamp appended to the filename.
+    The backup is saved in the same directory as the original.
 
     Args:
-        filepath (Path): Path to the file to back up.
+        filepath (Path): File to back up. Defaults to DATA_FILE.
 
     Returns:
-        bool: True if the backup was created, False if the source
-              file does not exist.
+        bool: True if backup succeeded, False if source does not exist.
     """
     if not filepath.exists():
         print("  ✗ No storage file to back up.")
         return False
 
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp   = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     backup_name = f"{filepath.stem}_backup_{timestamp}{filepath.suffix}"
     backup_path = filepath.parent / backup_name
 
@@ -150,29 +178,27 @@ def backup_tasks(filepath: Path = DATA_FILE) -> bool:
         return False
 
 
-# ─── Metadata ─────────────────────────────────────────────
-
+# ─── Storage metadata ─────────────────────────────────────
 
 def get_storage_info(filepath: Path = DATA_FILE) -> dict:
     """
     Return metadata about the storage file.
 
     Args:
-        filepath (Path): Path to the storage file.
+        filepath (Path): Storage file to inspect.
 
     Returns:
-        dict: File metadata — exists, filepath, size_bytes, last_modified.
-              If file does not exist, only 'exists': False is set.
+        dict: exists, filepath, size_bytes, last_modified.
     """
     if not filepath.exists():
         return {"exists": False}
 
     stat = filepath.stat()
     return {
-        "exists": True,
-        "filepath": str(filepath.resolve()),
-        "size_bytes": stat.st_size,
-        "last_modified": datetime.datetime.fromtimestamp(stat.st_mtime).strftime(
-            DATE_FMT
-        ),
+        "exists":        True,
+        "filepath":      str(filepath.resolve()),
+        "size_bytes":    stat.st_size,
+        "last_modified": datetime.datetime.fromtimestamp(
+            stat.st_mtime
+        ).strftime(DATE_FMT),
     }

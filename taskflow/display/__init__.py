@@ -1,3 +1,4 @@
+# taskflow/display/__init__.py
 from .renderer import (
     display_header,
     display_tasks,
@@ -7,6 +8,23 @@ from .renderer import (
     display_storage_info,
     prompt_valid,
     prompt_task_number,
+    COMMANDS,
+)
+from .commands import (
+    cmd_add,
+    cmd_view,
+    cmd_done,
+    cmd_remove,
+    cmd_filter,
+    cmd_search,
+    cmd_stats,
+    cmd_detail,
+    cmd_rename,
+    cmd_weather,
+    cmd_forecast,
+    cmd_backup,
+    cmd_storage,
+    cmd_quit,
 )
 
 __all__ = [
@@ -18,4 +36,19 @@ __all__ = [
     "display_storage_info",
     "prompt_valid",
     "prompt_task_number",
+    "COMMANDS",
+    "cmd_add",
+    "cmd_view",
+    "cmd_done",
+    "cmd_remove",
+    "cmd_filter",
+    "cmd_search",
+    "cmd_stats",
+    "cmd_detail",
+    "cmd_rename",
+    "cmd_weather",
+    "cmd_forecast",
+    "cmd_backup",
+    "cmd_storage",
+    "cmd_quit",
 ]

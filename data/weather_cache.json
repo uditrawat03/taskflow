@@ -1,0 +1,13 @@
+{
+  "fetched_at": 1779383702.2244854,
+  "weather": {
+    "location": "Delhi, IN",
+    "temperature": 35.5,
+    "feels_like": 34.7,
+    "humidity": 23,
+    "wind_speed": 8.1,
+    "condition": "Clear sky",
+    "emoji": "\u2600",
+    "fetched_at": "22:45"
+  }
+}
