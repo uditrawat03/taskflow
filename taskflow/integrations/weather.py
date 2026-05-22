@@ -12,18 +12,13 @@ from ..config import (
     DATE_FMT,
 )
 
-__all__ = [
-    "fetch_weather",
-    "display_weather",
-    "fetch_forecast",
-    "display_forecast",
-    "get_weather_summary",
-]
+import logging
+logger = logging.getLogger(__name__)
 
-# ── Cache config ──────────────────────────────────────────
+# Caching config
 _CACHE_FILE = DATA_DIR / "weather_cache.json"
 
-# ── WMO weather code mappings ─────────────────────────────
+# WMO weather code mappings
 WMO_CODES: dict[int, str] = {
     0: "Clear sky",
     1: "Mainly clear",
@@ -76,9 +71,7 @@ HEADERS = {
 }
 
 
-# ─── Cache helpers ────────────────────────────────────────
-
-
+# Cache helpers
 def _load_cache() -> dict | None:
     """Return cached weather dict if still within TTL, else None."""
     if not _CACHE_FILE.exists():
@@ -105,9 +98,7 @@ def _save_cache(weather: dict) -> None:
         pass  # cache failure is never critical
 
 
-# ─── Current weather ──────────────────────────────────────
-
-
+# Current weather
 def _do_fetch_weather(
     latitude: float, longitude: float, location_name: str
 ) -> dict | None:
@@ -160,34 +151,21 @@ def _do_fetch_weather(
     return None
 
 
-def fetch_weather(
-    latitude: float,
-    longitude: float,
-    location_name: str = "Your Location",
-    use_cache: bool = True,
-) -> dict | None:
-    """
-    Fetch current weather. Returns cached data if within TTL.
-
-    Args:
-        latitude      (float): Location latitude.
-        longitude     (float): Location longitude.
-        location_name (str)  : Display name for the location.
-        use_cache     (bool) : Return cached data if fresh. Default True.
-
-    Returns:
-        dict | None: Weather data dict, or None on failure.
-    """
+def fetch_weather(latitude, longitude, location_name="", use_cache=True):
     if use_cache:
         cached = _load_cache()
         if cached:
+            logger.debug("Weather cache hit — returning cached data")
             return cached
 
+    logger.info("Fetching weather", extra={"location": location_name})
     weather = _do_fetch_weather(latitude, longitude, location_name)
     if weather:
         _save_cache(weather)
+        logger.debug("Weather cached successfully")
+    else:
+        logger.warning("Weather fetch returned None")
     return weather
-
 
 def display_weather(weather: dict | None) -> None:
     """Pretty-print current weather to the terminal."""

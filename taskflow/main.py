@@ -1,23 +1,9 @@
-# taskflow/main.py
-# TaskFlow AI — Application entry point.
-#
-# Thin orchestration layer:
-#   1. Parse command-line arguments
-#   2. Load tasks from JSON storage
-#   3. Handle storage errors gracefully
-#   4. Fetch weather (non-critical)
-#   5. Render header
-#   6. Dispatch to CLI (one-shot) or shell (interactive)
-#
-# Version history:
-#   Day 04 — inline in tasks.py
-#   Day 11 — extracted to main.py (Day 11 supplement)
-#   Day 15 — argparse + dual-mode dispatch added (cli.py)
-
-from .config import USER_LATITUDE, USER_LONGITUDE, USER_LOCATION
+import sys
+from .config import USER_LATITUDE, USER_LONGITUDE, USER_LOCATION, VERSION
 from .errors import StorageError
 from .storage.json_store import load_tasks_safe, backup_tasks
 from .display.renderer import display_header
+from .logging_config import setup_logging
 
 __all__ = ["main"]
 
@@ -31,12 +17,23 @@ def main() -> None:
         One-shot:    python run.py add "Review PR #high @work"
                      python run.py view --priority high
     """
-    import sys
 
-    args = sys.argv[1:]
+    args       = sys.argv[1:]
     no_weather = "--no-weather" in args
+    debug_mode = "--debug" in args
 
-    # ── Load tasks ────────────────────────────────────────
+    # Configure logging FIRST — before anything else runs
+    setup_logging(
+        level   = "DEBUG" if debug_mode else "INFO",
+        console = True,
+        json_file = True,
+    )
+
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info("TaskFlow AI starting", extra={"version": VERSION})
+
+    # Load tasks
     print()
     print("  Loading tasks...", end=" ", flush=True)
     tasks, load_error = load_tasks_safe()
@@ -53,7 +50,7 @@ def main() -> None:
         count = len(tasks)
         print(f"✓ {count} task{'s' if count != 1 else ''} loaded.")
 
-    # ── Fetch weather ─────────────────────────────────────
+    #  Fetch weather ─
     weather = None
     if not no_weather:
         try:
@@ -63,10 +60,10 @@ def main() -> None:
         except Exception:
             weather = None  # weather is never critical
 
-    # ── Render header ─────────────────────────────────────
+    #  Render header ─
     display_header(weather)
 
-    # ── Dispatch ──────────────────────────────────────────
+    # Dispatch
     # Full argparse + dual-mode dispatch lives in cli.py (Day 15).
     # Check if any non-flag arguments were passed — if so, try CLI dispatch.
     non_flag_args = [a for a in args if not a.startswith("--")]

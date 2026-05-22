@@ -1,20 +1,7 @@
-# taskflow/storage/json_store.py
-# TaskFlow AI — JSON-based task persistence.
-#
-# Storage format: a JSON array of task dictionaries.
-# Uses an atomic write pattern (write to .tmp, then rename)
-# so the data file is never left in a partially-written state.
-#
-# Version history:
-#   Day 08 — pipe-separated text storage
-#   Day 09 — migrated to JSON
-#   Day 10 — StorageError hierarchy, load_tasks_safe() added
-#   Day 11 — moved into storage/ subpackage (Day 11 supplement)
-#   Day 12 — save/load now handle Task objects via to_dict/from_dict
-
 import json
 import shutil
 import datetime
+import time
 from pathlib import Path
 
 from ..config import DATA_FILE, DATE_FMT
@@ -22,93 +9,50 @@ from ..errors import StorageError
 from ..core.task_factory import task_from_dict
 from ..core.task         import Task
 
-__all__ = [
-    "save_tasks",
-    "load_tasks",
-    "load_tasks_safe",
-    "backup_tasks",
-    "get_next_id",
-    "get_storage_info",
-]
+import logging
+logger = logging.getLogger(__name__)
 
-
-# ─── Save ─────────────────────────────────────────────────
-
-def save_tasks(tasks: list, filepath: Path = DATA_FILE) -> None:
-    """
-    Persist a list of Task objects (or dicts) to a JSON file.
-
-    Uses an atomic write: writes to a .tmp file first, then renames
-    it over the target path — the data file is never half-written.
-
-    Args:
-        tasks    (list): Task objects or plain dicts to save.
-        filepath (Path): Destination JSON file. Defaults to DATA_FILE.
-
-    Raises:
-        StorageError: If the file cannot be written.
-    """
+# Save tasks
+def save_tasks(tasks, filepath=DATA_FILE):
+    """Save tasks to JSON — atomic write."""
     filepath.parent.mkdir(parents=True, exist_ok=True)
     tmp = filepath.with_suffix(".tmp")
-
+    start = time.perf_counter()
     try:
-        # Serialise — convert Task objects to dicts
-        data = [
-            t.to_dict() if isinstance(t, Task) else t
-            for t in tasks
-        ]
+        data = [t.to_dict() if isinstance(t, Task) else t for t in tasks]
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
-        tmp.rename(filepath)   # atomic replace on most filesystems
+        tmp.rename(filepath)
+        elapsed_ms = round((time.perf_counter() - start) * 1000, 1)
+        logger.info(
+            "Tasks saved",
+            extra={"task_count": len(tasks), "duration_ms": elapsed_ms}
+        )
     except (OSError, TypeError) as e:
         if tmp.exists():
             tmp.unlink()
-        raise StorageError(
-            f"Could not save tasks to '{filepath.name}': {e}"
-        ) from e
+        logger.error("Save failed: %s", e, exc_info=True)
+        raise StorageError(f"Could not save tasks: {e}") from e
 
 
-# ─── Load ─────────────────────────────────────────────────
-
-def load_tasks(filepath: Path = DATA_FILE) -> list[Task]:
-    """
-    Load Task objects from a JSON file.
-
-    Returns an empty list if the file does not exist (first run).
-    Uses task_from_dict to restore the correct subclass for each task.
-
-    Args:
-        filepath (Path): Source JSON file. Defaults to DATA_FILE.
-
-    Returns:
-        list[Task]: Loaded Task instances (correct subclass for each).
-
-    Raises:
-        StorageError: If the file exists but cannot be read or parsed.
-    """
+# load tasks
+def load_tasks(filepath=DATA_FILE):
+    """Load tasks from JSON."""
     if not filepath.exists():
+        logger.debug("Storage file not found — returning empty list: %s", filepath)
         return []
-
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
+        tasks = [task_from_dict(d) for d in data]
+        logger.info("Tasks loaded", extra={"task_count": len(tasks)})
+        return tasks
     except json.JSONDecodeError as e:
-        raise StorageError(
-            f"Storage file '{filepath.name}' contains invalid JSON "
-            f"(line {e.lineno}, col {e.colno})."
-        ) from e
+        logger.error("Storage file corrupted: %s", e)
+        raise StorageError("Storage file contains invalid JSON") from e
     except OSError as e:
-        raise StorageError(
-            f"Could not read storage file '{filepath.name}': {e}"
-        ) from e
-
-    if not isinstance(data, list):
-        raise StorageError(
-            f"Storage file has unexpected format: "
-            f"expected a JSON array, got {type(data).__name__}."
-        )
-
-    return [task_from_dict(d) for d in data]
+        logger.error("Could not read storage file: %s", e)
+        raise StorageError(f"Could not read storage file: {e}") from e
 
 
 def load_tasks_safe(

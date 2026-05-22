@@ -15,6 +15,8 @@ from ..config import (
 from ..errors import ValidationError, StorageError, TaskFlowError
 from ..core.task import Task
 from ..core.task_types import UrgentTask, RecurringTask, DeadlineTask
+from ..parser import parse_task_input, create_task_from_parse
+from ..integrations.weather import fetch_forecast, display_forecast, fetch_weather, display_weather
 from ..core.task_factory import task_from_dict
 from ..core.stats import (
     calculate_stats,
@@ -41,27 +43,13 @@ from .renderer import (
 )
 
 from ..services import add_task_to_list, is_at_limit, get_task_limit
-from ..utils    import pluralise
+from ..utils import pluralise
 
-__all__ = [
-    "cmd_add",
-    "cmd_view",
-    "cmd_done",
-    "cmd_remove",
-    "cmd_filter",
-    "cmd_search",
-    "cmd_stats",
-    "cmd_detail",
-    "cmd_rename",
-    "cmd_weather",
-    "cmd_forecast",
-    "cmd_backup",
-    "cmd_storage",
-    "cmd_quit",
-]
+import logging
 
+logger = logging.getLogger(__name__)
 
-# ─── Internal helpers ─────────────────────────────────────
+# Internal helpers
 
 
 def _max_tasks() -> int:
@@ -119,16 +107,16 @@ def _print_add_confirmation(task, total: int, max_tasks: int) -> None:
     print()
 
 
-# ─── add ──────────────────────────────────────────────────
-
-
+# add task
 def cmd_add(tasks: list, raw_input: str = "") -> None:
     """Collect task input and delegate creation to the service layer."""
 
     if is_at_limit(tasks):
         limit = get_task_limit()
-        print(f"\n  ✗ {pluralise(limit, 'task')} limit reached "
-              f"on {USER_PLAN} plan. Upgrade to premium.\n")
+        print(
+            f"\n  ✗ {pluralise(limit, 'task')} limit reached "
+            f"on {USER_PLAN} plan. Upgrade to premium.\n"
+        )
         return
 
     raw = _collect_raw_input(raw_input)
@@ -138,23 +126,36 @@ def cmd_add(tasks: list, raw_input: str = "") -> None:
     try:
         task = _parse_to_task(raw)
     except ValidationError as e:
+        logger.warning("Task add failed validation: %s", e)
         print(f"\n  ✗ {e}\n")
         return
 
     try:
         add_task_to_list(tasks, task)
+        logger.info(
+            "Task added",
+            extra={
+                "task_id": task.id,
+                "task_type": type(task).__name__,
+                "priority": task.priority,
+                "category": task.category,
+            },
+        )
     except ValidationError as e:
+        logger.warning("Task add rejected (limit): %s", e)
         print(f"\n  ✗ {e}\n")
         return
 
     _print_add_success(task, len(tasks))
 
+
 def _collect_raw_input(raw_input: str) -> str | None:
     """Prompt for input if not pre-supplied. Returns None on empty input."""
     if not raw_input:
         print()
-        print("  Shorthand: !!  ~daily/weekly/monthly  "
-              "#priority  @category  !YYYY-MM-DD")
+        print(
+            "  Shorthand: !!  ~daily/weekly/monthly  #priority  @category  !YYYY-MM-DD"
+        )
         print()
         raw_input = input("  Input: ").strip()
     if not raw_input:
@@ -165,7 +166,6 @@ def _collect_raw_input(raw_input: str) -> str | None:
 
 def _parse_to_task(raw: str) -> Task:
     """Parse raw input into a Task. Raises ValidationError on failure."""
-    from ..parser import parse_task_input, create_task_from_parse
     result = parse_task_input(raw)
     return create_task_from_parse(result)
 
@@ -173,19 +173,16 @@ def _parse_to_task(raw: str) -> Task:
 def _print_add_success(task: Task, total: int) -> None:
     """Print the post-add confirmation message."""
     typename = type(task).__name__
-    print(f"\n  ✓ {typename} added: \"{task.title}\"")
+    print(f'\n  ✓ {typename} added: "{task.title}"')
     print(f"  Total: {pluralise(total, 'task')}")
     limit = get_task_limit()
     remaining = limit - total
     if 0 < remaining <= 2:
-        print(f"  ⚠  {pluralise(remaining, 'slot')} remaining on "
-              f"{USER_PLAN} plan.")
+        print(f"  ⚠  {pluralise(remaining, 'slot')} remaining on {USER_PLAN} plan.")
     print()
 
 
-# ─── view ─────────────────────────────────────────────────
-
-
+# view tasks
 def cmd_view(
     tasks: list,
     priority: str | None = None,
@@ -240,9 +237,7 @@ def cmd_view(
     display_tasks(filtered)
 
 
-# ─── done ─────────────────────────────────────────────────
-
-
+# done task
 @validate_non_empty
 def cmd_done(tasks: list, task_id: int | None = None) -> None:
     """
@@ -292,9 +287,7 @@ def cmd_done(tasks: list, task_id: int | None = None) -> None:
         print(f'\n  ✓ "{task.get("title", "")}" marked as done!\n')
 
 
-# ─── remove ───────────────────────────────────────────────
-
-
+# remove task
 @validate_non_empty
 def cmd_remove(tasks: list, task_id: int | None = None) -> None:
     """
@@ -324,9 +317,7 @@ def cmd_remove(tasks: list, task_id: int | None = None) -> None:
     )
 
 
-# ─── filter ───────────────────────────────────────────────
-
-
+# filter tasks
 def cmd_filter(tasks: list) -> None:
     """Interactively filter tasks by priority, category, or status."""
     if not tasks:
@@ -376,9 +367,7 @@ def cmd_filter(tasks: list) -> None:
         print(f"\n  No tasks found for filter: {label}\n")
 
 
-# ─── search ───────────────────────────────────────────────
-
-
+# search tasks
 def cmd_search(tasks: list, keyword: str = "") -> None:
     """
     Search tasks by keyword or regex pattern.
@@ -426,9 +415,7 @@ def cmd_search(tasks: list, keyword: str = "") -> None:
         print(f"\n  No tasks matching '{keyword}'.\n")
 
 
-# ─── stats ────────────────────────────────────────────────
-
-
+# stats tasks
 def cmd_stats(tasks: list) -> None:
     """Display the full statistics dashboard."""
     display_stats_dashboard(tasks)
@@ -443,7 +430,7 @@ def cmd_stats(tasks: list) -> None:
         print()
 
 
-# ─── detail ───────────────────────────────────────────────
+# detail ─
 
 
 def cmd_detail(tasks: list) -> None:
@@ -460,9 +447,7 @@ def cmd_detail(tasks: list) -> None:
     display_task_detail(tasks[index], index + 1)
 
 
-# ─── rename ───────────────────────────────────────────────
-
-
+# rename tasks
 def cmd_rename(tasks: list) -> None:
     """Rename a task with validation."""
     if not tasks:
@@ -498,14 +483,10 @@ def cmd_rename(tasks: list) -> None:
     print(f'\n  ✓ Renamed to "{new_title}"\n')
 
 
-# ─── weather ──────────────────────────────────────────────
-
-
+# weather
 def cmd_weather() -> dict | None:
     """Fetch and display current weather. Returns weather dict for caching."""
     try:
-        from ..integrations.weather import fetch_weather, display_weather
-
         weather = fetch_weather(USER_LATITUDE, USER_LONGITUDE, USER_LOCATION)
         display_weather(weather)
         return weather
@@ -514,38 +495,30 @@ def cmd_weather() -> dict | None:
         return None
 
 
-# ─── forecast ─────────────────────────────────────────────
-
-
+# forecast
 def cmd_forecast() -> None:
     """Fetch and display a 3-day weather forecast."""
     try:
-        from ..integrations.weather import fetch_forecast, display_forecast
-
         forecast = fetch_forecast(USER_LATITUDE, USER_LONGITUDE, USER_LOCATION)
         display_forecast(forecast, USER_LOCATION)
     except Exception as e:
         print(f"\n  ✗ Forecast unavailable: {e}\n")
 
 
-# ─── backup ───────────────────────────────────────────────
-
-
+# backup
 def cmd_backup() -> None:
     """Create a timestamped backup of the task storage file."""
     backup_tasks()
 
 
-# ─── storage ──────────────────────────────────────────────
-
-
+# storage
 def cmd_storage() -> None:
     """Display metadata about the storage file."""
     info = get_storage_info()
     display_storage_info(info)
 
 
-# ─── quit ─────────────────────────────────────────────────
+# quit 
 
 
 def cmd_quit(tasks: list, save: bool = True) -> None:
