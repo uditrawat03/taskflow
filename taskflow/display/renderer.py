@@ -1,5 +1,7 @@
 from ..config import APP_NAME, VERSION, USER_NAME, USER_PLAN, PLAN_LIMITS
 from ..core.task import Task
+from ..utils import truncate
+from ..core.task_types import DeadlineTask, RecurringTask, UrgentTask
 
 __all__ = [
     "display_header",
@@ -65,15 +67,13 @@ def display_header(weather: dict | None = None) -> None:
 # ─── Task table ───────────────────────────────────────────
 
 
-def display_tasks(tasks: list) -> None:
+def display_tasks(tasks: list[Task]) -> None:
     """
-    Display a list of tasks as a formatted table.
-
-    Accepts Task objects or plain dicts.
-    Truncates titles that would overflow the column.
+    Display a list of Task objects as a formatted table.
 
     Args:
-        tasks (list): Tasks to display (Task objects or dicts).
+        tasks (list[Task]): Task objects to display.
+                            Plain dicts are no longer accepted.
     """
     if not tasks:
         print("\n  No tasks to display. Type 'add' to create one.\n")
@@ -81,7 +81,7 @@ def display_tasks(tasks: list) -> None:
 
     col = {"num": 4, "title": 26, "priority": 10, "category": 13}
     width = sum(col.values()) + 10
-    div = "  " + "─" * width
+    div   = "  " + "─" * width
 
     print()
     print(div)
@@ -95,44 +95,31 @@ def display_tasks(tasks: list) -> None:
     print(div)
 
     for i, task in enumerate(tasks, start=1):
-        title = _attr(task, "title", "")
-        priority = _attr(task, "priority", "medium")
-        category = _attr(task, "category", "general")
-        done = _done(task)
+        title  = truncate(task.title, col["title"] - 1)
+        status = "✓ done" if task.done else "pending"
+        extra  = ""
 
-        # Truncate long titles
-        if len(title) >= col["title"]:
-            title = title[: col["title"] - 2] + ".."
-
-        status = "✓ done" if done else "pending"
-
-        # Type-specific extras
-        extra = ""
-        if isinstance(task, Task):
-            from ..core.task_types import DeadlineTask, RecurringTask, UrgentTask
-
-            if isinstance(task, DeadlineTask):
-                extra = f" {task.urgency_label}"
-            elif isinstance(task, RecurringTask):
-                extra = f" {task.recurrence_label}"
-            elif isinstance(task, UrgentTask):
-                extra = " 🚨"
+        if isinstance(task, DeadlineTask):
+            extra = f" {task.urgency_label}"
+        elif isinstance(task, RecurringTask):
+            extra = f" {task.recurrence_label}"
+        elif isinstance(task, UrgentTask):
+            extra = " 🚨"
 
         print(
             f"  {i:<{col['num']}}"
             f"{title:<{col['title']}}"
-            f"{priority.upper():<{col['priority']}}"
-            f"{category:<{col['category']}}"
+            f"{task.priority.upper():<{col['priority']}}"
+            f"{task.category:<{col['category']}}"
             f"{status}{extra}"
         )
 
     print(div)
 
-    # Summary line
-    total = len(tasks)
-    done = sum(1 for t in tasks if _done(t))
+    total   = len(tasks)
+    done    = sum(1 for t in tasks if t.done)
     pending = total - done
-    rate = round(done / total * 100, 1) if total > 0 else 0.0
+    rate    = round(done / total * 100, 1) if total > 0 else 0.0
     print(
         f"  {total} task{'s' if total != 1 else ''} · "
         f"{pending} pending · {done} done · {rate}% complete"

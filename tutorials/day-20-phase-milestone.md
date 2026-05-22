@@ -145,7 +145,7 @@ This is the dependency flow diagram already documented in the Day 18 file listin
 
 A **technical debt register** is a list of things you know are not ideal and should eventually be fixed. Writing it down prevents the debt from being forgotten or growing invisibly.
 
-Create `documents/technical-debt.md`:
+Create `docs/technical-debt.md`:
 
 ```markdown
 # TaskFlow AI — Technical Debt Register
@@ -219,7 +219,7 @@ Last updated: Day 20
 
 An **Architecture Decision Record (ADR)** documents a significant architectural decision — what was decided, why, and what alternatives were rejected. They prevent the same debates from happening twice.
 
-Create `documents/adr/` and write one ADR for the most important decision of Phase 1:
+Create `docs/adr/` and write one ADR for the most important decision of Phase 1:
 
 ```markdown
 # ADR-001: Use JSON files for task storage (not SQLite)
@@ -322,8 +322,8 @@ Update `CHANGELOG.md`:
 - `uv` support — faster dependency management (Day 18)
 - `pre-commit` hooks — black, ruff, mypy on every commit (Day 18)
 - `CONTRIBUTING.md` — developer guide and PR checklist (Day 19)
-- `documents/technical-debt.md` — documented debt register (Day 20)
-- `documents/adr/ADR-001.md` — storage decision record (Day 20)
+- `docs/technical-debt.md` — documented debt register (Day 20)
+- `docs/adr/ADR-001.md` — storage decision record (Day 20)
 
 ### Fixed
 - Weather cached to file — 10-minute TTL prevents repeated API calls (TD-004)
@@ -353,7 +353,7 @@ git push origin main --tags
 
 ### Phase 3 Preview — What's Next
 
-Write the Phase 3 plan into `documents/phase3-plan.md`:
+Write the Phase 3 plan into `docs/phase3-plan.md`:
 
 ```markdown
 # Phase 3 Plan — Modern Backend Engineering (Days 41-60)
@@ -436,10 +436,10 @@ Answer these honestly in a journal, a vlog, or a document:
 ## Exercises
 
 **Exercise 1 — Complete the tech debt register.**
-Add five more entries to `documents/technical-debt.md` based on your own code review. Classify each as Critical, High, or Low. Estimate effort. This document will be referenced every phase.
+Add five more entries to `docs/technical-debt.md` based on your own code review. Classify each as Critical, High, or Low. Estimate effort. This document will be referenced every phase.
 
 **Exercise 2 — Draw the full system diagram.**
-Use Excalidraw (excalidraw.com), draw.io, or paper. Draw all three C4 levels. Export as PNG and add to `documents/architecture.png`. Reference it from `README.md`.
+Use Excalidraw (excalidraw.com), draw.io, or paper. Draw all three C4 levels. Export as PNG and add to `docs/architecture.png`. Reference it from `README.md`.
 
 **Exercise 3 — Write ADR-002.**
 Write an ADR for a second significant decision from Phase 1 — e.g.:
@@ -450,7 +450,7 @@ Write an ADR for a second significant decision from Phase 1 — e.g.:
 Follow the same format as ADR-001.
 
 **Exercise 4 — Metrics.**
-Run these measurements and record the results in `documents/metrics-day20.md`:
+Run these measurements and record the results in `docs/metrics-day20.md`:
 
 ```bash
 # Lines of code (excluding blank lines and comments)
@@ -479,7 +479,7 @@ Install `pydeps` and generate a visual dependency graph of the `taskflow` packag
 
 ```bash
 pip install pydeps
-pydeps taskflow --max-bacon=3 --output documents/dependency-graph.svg
+pydeps taskflow --max-bacon=3 --output docs/dependency-graph.svg
 ```
 
 Open the SVG in a browser. Does the graph match the dependency flow diagram in the Day 18 supplement? Are there any unexpected connections? Add the graph to `README.md`.
@@ -492,11 +492,11 @@ Before moving to Day 21 (Clean Code Principles):
 
 - [ ] I have read every file in the project and written down observations
 - [ ] The system diagram exists at all three C4 levels
-- [ ] `documents/technical-debt.md` has at least 5 entries, classified and estimated
-- [ ] `documents/adr/ADR-001.md` is written
+- [ ] `docs/technical-debt.md` has at least 5 entries, classified and estimated
+- [ ] `docs/adr/ADR-001.md` is written
 - [ ] `CHANGELOG.md` is updated for v1.1.0
 - [ ] `git tag v1.1.0` is applied and pushed
-- [ ] The Phase 3 plan is written in `documents/phase3-plan.md`
+- [ ] The Phase 3 plan is written in `docs/phase3-plan.md`
 - [ ] I can explain the full system architecture from memory
 
 ---
