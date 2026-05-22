@@ -1,16 +1,3 @@
-# taskflow/display/renderer.py
-# TaskFlow AI — Terminal display and rendering.
-#
-# RULE: This is the ONLY module that calls print().
-# All other modules (core/, storage/, parser.py, etc.) must NEVER
-# print directly — they raise exceptions or return values.
-#
-# Version history:
-#   Day 06 — display helpers inline in tasks.py
-#   Day 11 — extracted to display/renderer.py (Day 11 supplement)
-#   Day 12 — updated to accept Task objects alongside dicts
-#   Day 16 — stats dashboard upgraded with generator-based stats
-
 from ..config import APP_NAME, VERSION, USER_NAME, USER_PLAN, PLAN_LIMITS
 from ..core.task import Task
 

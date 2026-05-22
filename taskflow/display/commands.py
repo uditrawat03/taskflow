@@ -1,25 +1,3 @@
-# taskflow/display/commands.py
-# TaskFlow AI — Command implementations.
-#
-# One function per user-facing command.
-# This module is the integration layer between user input and business logic.
-#
-# Rules:
-#   - Each function maps to exactly ONE command.
-#   - Validation errors are caught here and shown to the user.
-#   - Business logic lives in core/; display lives in renderer.py.
-#   - save_tasks() is NOT called here — shell.py / cli.py handles that.
-#
-# Version history:
-#   Day 06 — command functions inline in tasks.py
-#   Day 11 — extracted to display/commands.py
-#   Day 12 — updated for Task objects
-#   Day 13 — RecurringTask reset logic in cmd_done
-#   Day 14 — smart parser wired into cmd_add
-#   Day 15 — cmd_backup, cmd_storage, cmd_quit added
-#   Day 16 — TaskFilter pipeline in cmd_view and cmd_filter
-#   Day 17 — @validate_non_empty applied to cmd_done and cmd_remove
-
 import re as re_module
 import datetime
 
@@ -61,6 +39,9 @@ from .renderer import (
     prompt_task_number,
     COMMANDS,
 )
+
+from ..services import add_task_to_list, is_at_limit, get_task_limit
+from ..utils    import pluralise
 
 __all__ = [
     "cmd_add",
@@ -142,83 +123,64 @@ def _print_add_confirmation(task, total: int, max_tasks: int) -> None:
 
 
 def cmd_add(tasks: list, raw_input: str = "") -> None:
-    """
-    Add a new task using the smart parser or prompted fallback.
+    """Collect task input and delegate creation to the service layer."""
 
-    Shorthand tokens supported:
-        !!              → UrgentTask
-        ~daily/weekly/monthly → RecurringTask
-        #high/#medium/#low    → priority
-        @category             → category
-        !YYYY-MM-DD           → DeadlineTask with due date
-
-    Args:
-        tasks     (list): Current task list — appended to in place.
-        raw_input (str) : Pre-supplied input (one-shot CLI). Empty = prompt.
-    """
-    max_tasks = _max_tasks()
-
-    if len(tasks) >= max_tasks:
-        print(
-            f"\n  ✗ Task limit reached ({max_tasks} tasks on "
-            f"{USER_PLAN} plan). Upgrade to premium.\n"
-        )
+    if is_at_limit(tasks):
+        limit = get_task_limit()
+        print(f"\n  ✗ {pluralise(limit, 'task')} limit reached "
+              f"on {USER_PLAN} plan. Upgrade to premium.\n")
         return
 
-    # Collect input
+    raw = _collect_raw_input(raw_input)
+    if raw is None:
+        return
+
+    try:
+        task = _parse_to_task(raw)
+    except ValidationError as e:
+        print(f"\n  ✗ {e}\n")
+        return
+
+    try:
+        add_task_to_list(tasks, task)
+    except ValidationError as e:
+        print(f"\n  ✗ {e}\n")
+        return
+
+    _print_add_success(task, len(tasks))
+
+def _collect_raw_input(raw_input: str) -> str | None:
+    """Prompt for input if not pre-supplied. Returns None on empty input."""
     if not raw_input:
         print()
-        print(
-            "  Shorthand: !!  ~daily/weekly/monthly  #priority  @category  !YYYY-MM-DD"
-        )
+        print("  Shorthand: !!  ~daily/weekly/monthly  "
+              "#priority  @category  !YYYY-MM-DD")
         print()
         raw_input = input("  Input: ").strip()
-
     if not raw_input:
         print("  ✗ Input cannot be empty.\n")
-        return
-
-    # Try smart parser
-    try:
-        from ..parser import parse_task_input, create_task_from_parse
-
-        result = parse_task_input(raw_input)
-        task = create_task_from_parse(result)
-    except ImportError:
-        task = _prompted_fallback(raw_input, tasks)
-        if task is None:
-            return
-    except ValidationError as e:
-        print(f"\n  ✗ {e}\n")
-        return
-
-    tasks.append(task)
-    _print_add_confirmation(task, len(tasks), max_tasks)
-
-    # Type-specific extra info
-    if isinstance(task, DeadlineTask):
-        print(f"  Due: {task.due_date} — {task.urgency_label}\n")
-    elif isinstance(task, RecurringTask):
-        print(f"  Recurs: {task.recurrence}\n")
-    elif isinstance(task, UrgentTask):
-        print(f"  {task.escalation_note}\n")
-
-
-def _prompted_fallback(title: str, tasks: list) -> Task | None:
-    """Prompt for priority and category when parser is unavailable."""
-    title = title.strip()
-    if not title:
-        print("  ✗ Title cannot be empty.\n")
         return None
-    priority = prompt_valid(
-        "  Priority (high/medium/low): ", VALID_PRIORITIES, "priority"
-    )
-    category = prompt_valid("  Category: ", VALID_CATEGORIES, "category")
-    try:
-        return Task(title=title, priority=priority, category=category)
-    except ValidationError as e:
-        print(f"\n  ✗ {e}\n")
-        return None
+    return raw_input
+
+
+def _parse_to_task(raw: str) -> Task:
+    """Parse raw input into a Task. Raises ValidationError on failure."""
+    from ..parser import parse_task_input, create_task_from_parse
+    result = parse_task_input(raw)
+    return create_task_from_parse(result)
+
+
+def _print_add_success(task: Task, total: int) -> None:
+    """Print the post-add confirmation message."""
+    typename = type(task).__name__
+    print(f"\n  ✓ {typename} added: \"{task.title}\"")
+    print(f"  Total: {pluralise(total, 'task')}")
+    limit = get_task_limit()
+    remaining = limit - total
+    if 0 < remaining <= 2:
+        print(f"  ⚠  {pluralise(remaining, 'slot')} remaining on "
+              f"{USER_PLAN} plan.")
+    print()
 
 
 # ─── view ─────────────────────────────────────────────────

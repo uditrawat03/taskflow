@@ -1,13 +1,13 @@
 {
-  "fetched_at": 1779383702.2244854,
+  "fetched_at": 1779429118.9787316,
   "weather": {
     "location": "Delhi, IN",
-    "temperature": 35.5,
-    "feels_like": 34.7,
-    "humidity": 23,
-    "wind_speed": 8.1,
+    "temperature": 40.0,
+    "feels_like": 40.9,
+    "humidity": 19,
+    "wind_speed": 10.3,
     "condition": "Clear sky",
     "emoji": "\u2600",
-    "fetched_at": "22:45"
+    "fetched_at": "11:21"
   }
 }

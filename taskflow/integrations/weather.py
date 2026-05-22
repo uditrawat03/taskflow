@@ -1,12 +1,3 @@
-# taskflow/integrations/weather.py
-# TaskFlow AI — Weather integration using Open-Meteo API.
-# No API key required.
-#
-# Version history:
-#   Day 09 — initial weather fetch
-#   Day 14 — forecast endpoint added
-#   Day 18 — file-based cache added (TTL = 10 minutes)
-
 import json
 import time
 import datetime
