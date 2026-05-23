@@ -18,7 +18,8 @@ _URGENT_PREFIX = re.compile(r"^!!\s*")
 _RECURRING_PREFIX = re.compile(r"^~(daily|weekly|monthly)\s+", re.IGNORECASE)
 _PRIORITY_TOKEN = re.compile(r"#(high|medium|low)", re.IGNORECASE)
 _CATEGORY_TOKEN = re.compile(r"@(\w+)", re.IGNORECASE)
-_DUE_DATE_TOKEN = re.compile(r"!(\d{4}-\d{2}-\d{2})")
+# _DUE_DATE_TOKEN = re.compile(r"!(\d{4}-\d{2}-\d{2})")
+_DUE_DATE_TOKEN = re.compile(r"!(\S+)")
 _EXTRA_SPACES = re.compile(r"\s{2,}")
 
 
@@ -144,7 +145,7 @@ def parse_task_input(raw: str) -> ParseResult:
                     f"Invalid date '{date_str}'. Use YYYY-MM-DD format.",
                     field="due_date",
                     value=date_str,
-                )
+                ) from None
             text = _DUE_DATE_TOKEN.sub("", text).strip()
 
     #  Clean remaining text → title ─

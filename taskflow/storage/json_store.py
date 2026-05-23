@@ -44,6 +44,13 @@ def load_tasks(filepath=DATA_FILE):
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
+
+        # Validate top-level JSON structure
+        if not isinstance(data, list):
+            raise StorageError(
+                "Storage file must contain a JSON list of tasks"
+            )
+
         tasks = [task_from_dict(d) for d in data]
         logger.info("Tasks loaded", extra={"task_count": len(tasks)})
         return tasks

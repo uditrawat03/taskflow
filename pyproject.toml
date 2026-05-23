@@ -100,9 +100,18 @@ addopts      = "-v --tb=short"
 
 # Coverage
 [tool.coverage.run]
-source = ["taskflow"]
-omit   = ["tests/*", "run.py"]
+source      = ["taskflow"]
+omit        = ["tests/*", "run.py", "*/logging_config.py"]
+branch      = true   # measure branch coverage, not just line coverage
 
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
+fail_under  = 80
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]
+
