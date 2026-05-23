@@ -524,7 +524,7 @@ def load_tasks_safe(filepath: Path = DATA_FILE) -> tuple[list, str | None]:
 def main() -> None:
     """Entry point with full exception handling."""
 
-    # ── Load tasks ────────────────────────────────────────
+    #  Load tasks 
     print("\n  Loading tasks...", end=" ", flush=True)
     tasks, load_error = load_tasks_safe()
 
@@ -542,7 +542,7 @@ def main() -> None:
 
     next_id = [get_next_id(tasks)]
 
-    # ── Fetch weather ─────────────────────────────────────
+    #  Fetch weather ─
     try:
         weather = fetch_weather(USER_LATITUDE, USER_LONGITUDE, USER_LOCATION)
     except Exception:
@@ -551,7 +551,7 @@ def main() -> None:
     display_header(weather)
     display_help()
 
-    # ── Command loop ──────────────────────────────────────
+    #  Command loop 
     while True:
         try:
             command = input("> ").strip().lower()

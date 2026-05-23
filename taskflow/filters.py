@@ -1,20 +1,3 @@
-# taskflow/filters.py
-# TaskFlow AI — Composable task filtering pipeline.
-#
-# Uses a fluent (method-chaining) interface so filters can be
-# composed declaratively:
-#
-#   results = (TaskFilter(tasks)
-#              .pending()
-#              .by_priority("high")
-#              .due_within(days=7)
-#              .sort_by("priority")
-#              .limit(5)
-#              .get())
-#
-# Version history:
-#   Day 16 — initial implementation
-
 import re as re_module
 import datetime
 from typing import Callable
@@ -45,7 +28,7 @@ class TaskFilter:
         """
         self._tasks: list = list(tasks)
 
-    # ── Status ────────────────────────────────────────────
+    #  Status
 
     def pending(self) -> "TaskFilter":
         """Keep only pending (not done) tasks."""
@@ -64,7 +47,7 @@ class TaskFilter:
         ]
         return self
 
-    # ── Attribute ─────────────────────────────────────────
+    #  Attribute ─
 
     def by_priority(self, priority: str) -> "TaskFilter":
         """Keep tasks matching the given priority."""
@@ -83,7 +66,7 @@ class TaskFilter:
         self._tasks = [t for t in self._tasks if isinstance(t, task_type)]
         return self
 
-    # ── Text ──────────────────────────────────────────────
+    #  Text
 
     def search(self, keyword: str) -> "TaskFilter":
         """Keep tasks whose title contains keyword (case-insensitive)."""
@@ -111,7 +94,7 @@ class TaskFilter:
         ]
         return self
 
-    # ── Date ──────────────────────────────────────────────
+    #  Date
 
     def due_within(self, days: int) -> "TaskFilter":
         """Keep DeadlineTask instances due within the given days."""
@@ -129,7 +112,7 @@ class TaskFilter:
         self._tasks = [t for t in self._tasks if _age_days(t) <= days]
         return self
 
-    # ── Custom ────────────────────────────────────────────
+    #  Custom
 
     def where(self, predicate: Callable) -> "TaskFilter":
         """
@@ -144,7 +127,7 @@ class TaskFilter:
         self._tasks = [t for t in self._tasks if predicate(t)]
         return self
 
-    # ── Sorting ───────────────────────────────────────────
+    #  Sorting ─
 
     def sort_by(self, key: str, reverse: bool = False) -> "TaskFilter":
         """
@@ -173,7 +156,7 @@ class TaskFilter:
         self._tasks = sorted(self._tasks, key=sort_keys[key], reverse=reverse)
         return self
 
-    # ── Paging ────────────────────────────────────────────
+    #  Paging
 
     def limit(self, n: int) -> "TaskFilter":
         """Keep only the first N tasks."""
@@ -185,7 +168,7 @@ class TaskFilter:
         self._tasks = self._tasks[n:]
         return self
 
-    # ── Terminal operations ───────────────────────────────
+    #  Terminal operations ─
 
     def get(self) -> list:
         """Return the filtered task list."""
@@ -236,7 +219,7 @@ class TaskFilter:
         return f"TaskFilter({len(self._tasks)} tasks)"
 
 
-# ─── Internal helpers — support Task objects and dicts ────
+# ─ Internal helpers — support Task objects and dicts
 
 
 def _get_attr(task, key: str, default=""):

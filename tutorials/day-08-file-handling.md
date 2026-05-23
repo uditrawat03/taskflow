@@ -27,13 +27,13 @@ Loading tasks from taskflow_tasks.txt... 3 tasks loaded.
 
 > view
 
-  ─────────────────────────────────────────────────────
+  ─
   #   Title                     Priority   Category   Status
-  ─────────────────────────────────────────────────────
+  ─
   1   Review pull request       HIGH       work       ✓ done
   2   Buy groceries             LOW        personal   pending
   3   Write Day 08 tutorial     HIGH       learning   pending
-  ─────────────────────────────────────────────────────
+  ─
   3 tasks · 2 pending · 1 done · 33.3% complete
 
 > add
@@ -250,14 +250,14 @@ Create a new file `storage.py` inside your `taskflow` folder. This module handle
 from pathlib import Path
 import datetime
 
-# ─── Configuration ────────────────────────────────────────
+# ─ Configuration 
 BASE_DIR   = Path(__file__).parent
 DATA_FILE  = BASE_DIR / "taskflow_tasks.txt"
 SEPARATOR  = "|"
 DATE_FMT   = "%Y-%m-%d %H:%M"
 
 
-# ─── Serialization ────────────────────────────────────────
+# ─ Serialization 
 
 def task_to_line(task: dict) -> str:
     """
@@ -314,7 +314,7 @@ def line_to_task(line: str) -> dict | None:
     }
 
 
-# ─── File Operations ──────────────────────────────────────
+# ─ File Operations 
 
 def save_tasks(tasks: list, filepath: Path = DATA_FILE) -> bool:
     """
@@ -491,7 +491,7 @@ def show_storage_info() -> None:
     """Display file storage metadata."""
     from storage import get_storage_info, DATA_FILE
     info = get_storage_info(DATA_FILE)
-    print("\n  ── Storage Info ──────────────────────")
+    print("\n   Storage Info ")
     if info["exists"]:
         print(f"  File      : {info['filepath']}")
         print(f"  Size      : {info['size_bytes']} bytes")

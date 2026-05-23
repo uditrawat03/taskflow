@@ -1,19 +1,3 @@
-# taskflow/parser.py
-# TaskFlow AI — Natural language task input parser.
-#
-# Shorthand syntax:
-#   !! title           → UrgentTask (priority forced to high)
-#   ~daily title       → RecurringTask (daily / weekly / monthly)
-#   title #priority    → sets priority (high / medium / low)
-#   title @category    → sets category (work / personal / health / learning / other)
-#   title !YYYY-MM-DD  → DeadlineTask with due date
-#
-# Tokens can be freely combined:
-#   "Review PR #high @work !2025-06-01" → DeadlineTask, high, work
-#
-# Version history:
-#   Day 14 — initial implementation
-
 import re
 import datetime
 
@@ -29,7 +13,7 @@ __all__ = [
     "ParseResult",
 ]
 
-# ── Compiled patterns ─────────────────────────────────────
+#  Compiled patterns ─
 _URGENT_PREFIX = re.compile(r"^!!\s*")
 _RECURRING_PREFIX = re.compile(r"^~(daily|weekly|monthly)\s+", re.IGNORECASE)
 _PRIORITY_TOKEN = re.compile(r"#(high|medium|low)", re.IGNORECASE)
@@ -111,20 +95,20 @@ def parse_task_input(raw: str) -> ParseResult:
     category = "work"
     due_date = None
 
-    # ── Detect !! (urgent) ────────────────────────────────
+    #  Detect !! (urgent) 
     if _URGENT_PREFIX.match(text):
         is_urgent = True
         priority = "high"
         text = _URGENT_PREFIX.sub("", text).strip()
 
-    # ── Detect ~recurrence ────────────────────────────────
+    #  Detect ~recurrence 
     if not is_urgent:
         m = _RECURRING_PREFIX.match(text)
         if m:
             recurrence = m.group(1).lower()
             text = text[m.end() :].strip()
 
-    # ── Extract #priority ─────────────────────────────────
+    #  Extract #priority ─
     m = _PRIORITY_TOKEN.search(text)
     if m:
         detected = m.group(1).lower()
@@ -132,7 +116,7 @@ def parse_task_input(raw: str) -> ParseResult:
             priority = detected
         text = _PRIORITY_TOKEN.sub("", text).strip()
 
-    # ── Extract @category ─────────────────────────────────
+    #  Extract @category ─
     m = _CATEGORY_TOKEN.search(text)
     if m:
         detected = m.group(1).lower()
@@ -147,7 +131,7 @@ def parse_task_input(raw: str) -> ParseResult:
             )
         text = _CATEGORY_TOKEN.sub("", text).strip()
 
-    # ── Extract !YYYY-MM-DD (only for non-urgent, non-recurring) ──
+    #  Extract !YYYY-MM-DD (only for non-urgent, non-recurring) 
     if not is_urgent and not recurrence:
         m = _DUE_DATE_TOKEN.search(text)
         if m:
@@ -163,7 +147,7 @@ def parse_task_input(raw: str) -> ParseResult:
                 )
             text = _DUE_DATE_TOKEN.sub("", text).strip()
 
-    # ── Clean remaining text → title ─────────────────────
+    #  Clean remaining text → title ─
     title = _EXTRA_SPACES.sub(" ", text).strip()
     if not title:
         raise ValidationError(

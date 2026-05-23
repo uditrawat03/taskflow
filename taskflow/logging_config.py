@@ -1,8 +1,6 @@
 import json
 import logging
 import logging.config
-import logging.handlers
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -97,7 +95,7 @@ def setup_logging(
     handlers: dict = {}
     handler_names: list[str] = []
 
-    # ── Console handler ───────────────────────────────────
+    #  Console handler ─
     if console:
         handlers["console"] = {
             "class": "logging.StreamHandler",
@@ -107,7 +105,7 @@ def setup_logging(
         }
         handler_names.append("console")
 
-    # ── Rotating JSON file handler ────────────────────────
+    #  Rotating JSON file handler
     if json_file:
         resolved_dir = log_dir or (BASE_DIR / "logs")
         resolved_dir.mkdir(parents=True, exist_ok=True)

@@ -1,17 +1,4 @@
-# taskflow/__init__.py
-# TaskFlow AI — Package entry point and public API.
-#
-# Import from here for the cleanest interface:
-#   from taskflow import Task, add_task, load_tasks
-#
-# Version history:
-#   Day 11 — package structure created
-#   Day 12 — Task class added
-#   Day 13 — Task subclasses added
-#   Day 15 — version bumped to 1.0.0
-#   Day 18 — version bumped to 1.1.0
-
-from .config import APP_NAME, VERSION, USER_NAME
+from .config import VERSION
 from .errors import (
     TaskFlowError,
     StorageError,
@@ -42,9 +29,6 @@ __all__ = [
     # Meta
     "__version__",
     "__author__",
-    "APP_NAME",
-    "VERSION",
-    "USER_NAME",
     # Errors
     "TaskFlowError",
     "StorageError",

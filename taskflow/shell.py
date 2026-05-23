@@ -1,17 +1,3 @@
-# taskflow/shell.py
-# TaskFlow AI — Interactive command loop.
-#
-# Launched when the user runs `python run.py` with no subcommand.
-# Delegates all command logic to display/commands.py.
-# Handles Ctrl+C (KeyboardInterrupt) and Ctrl+D (EOFError) gracefully.
-#
-# Version history:
-#   Day 04 — basic while loop in tasks.py
-#   Day 06 — command functions extracted
-#   Day 11 — moved to shell.py (Day 11 supplement)
-#   Day 15 — Ctrl+C / Ctrl+D handling
-#   Day 17 — exception handling tightened
-
 from .errors import ValidationError, StorageError, TaskFlowError
 from .display.commands import (
     cmd_add,
@@ -47,7 +33,7 @@ def run_interactive_shell(tasks: list) -> None:
     display_help()
 
     while True:
-        # ── Get command ───────────────────────────────────
+        #  Get command ─
         try:
             command = input("> ").strip().lower()
         except (KeyboardInterrupt, EOFError):
@@ -58,7 +44,7 @@ def run_interactive_shell(tasks: list) -> None:
         if not command:
             continue
 
-        # ── Dispatch ──────────────────────────────────────
+        #  Dispatch 
         try:
             if command == "add":
                 cmd_add(tasks)

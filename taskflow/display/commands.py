@@ -2,26 +2,23 @@ import re as re_module
 import datetime
 
 from ..config import (
-    USER_PLAN,
-    USER_NAME,
     PLAN_LIMITS,
     VALID_PRIORITIES,
     VALID_CATEGORIES,
     DATE_FMT,
-    USER_LATITUDE,
-    USER_LONGITUDE,
-    USER_LOCATION,
 )
-from ..errors import ValidationError, StorageError, TaskFlowError
+from ..errors import ValidationError, StorageError
 from ..core.task import Task
-from ..core.task_types import UrgentTask, RecurringTask, DeadlineTask
+from ..core.task_types import RecurringTask
 from ..parser import parse_task_input, create_task_from_parse
-from ..integrations.weather import fetch_forecast, display_forecast, fetch_weather, display_weather
-from ..core.task_factory import task_from_dict
+from ..integrations.weather import (
+    fetch_forecast,
+    display_forecast,
+    fetch_weather,
+    display_weather,
+)
 from ..core.stats import (
     calculate_stats,
-    priority_breakdown,
-    category_breakdown,
     average_title_length,
     most_productive_category,
 )
@@ -35,12 +32,14 @@ from .renderer import (
     display_tasks,
     display_task_detail,
     display_stats_dashboard,
-    display_help,
     display_storage_info,
     prompt_valid,
     prompt_task_number,
-    COMMANDS,
 )
+
+from ..env_config import get_settings
+
+settings = get_settings()
 
 from ..services import add_task_to_list, is_at_limit, get_task_limit
 from ..utils import pluralise
@@ -53,7 +52,7 @@ logger = logging.getLogger(__name__)
 
 
 def _max_tasks() -> int:
-    return PLAN_LIMITS.get(USER_PLAN, PLAN_LIMITS["free"])
+    return PLAN_LIMITS.get(settings.user_plan, PLAN_LIMITS["free"])
 
 
 def _get_attr(task, key: str, default=""):
@@ -100,7 +99,7 @@ def _print_add_confirmation(task, total: int, max_tasks: int) -> None:
     if 0 < remaining <= 2:
         print(
             f"  ⚠  Only {remaining} task slot{'s' if remaining != 1 else ''} "
-            f"remaining on your {USER_PLAN} plan."
+            f"remaining on your {settings.user_plan} plan."
         )
     elif remaining <= 0:
         print(f"  ⚠  Task limit reached ({max_tasks}). Upgrade to premium for more.")
@@ -487,7 +486,7 @@ def cmd_rename(tasks: list) -> None:
 def cmd_weather() -> dict | None:
     """Fetch and display current weather. Returns weather dict for caching."""
     try:
-        weather = fetch_weather(USER_LATITUDE, USER_LONGITUDE, USER_LOCATION)
+        weather = fetch_weather(settings.user_latitude, settings.user_longitude, settings.user_location)
         display_weather(weather)
         return weather
     except Exception as e:
@@ -499,8 +498,8 @@ def cmd_weather() -> dict | None:
 def cmd_forecast() -> None:
     """Fetch and display a 3-day weather forecast."""
     try:
-        forecast = fetch_forecast(USER_LATITUDE, USER_LONGITUDE, USER_LOCATION)
-        display_forecast(forecast, USER_LOCATION)
+        forecast = fetch_forecast(settings.user_latitude, settings.user_longitude, settings.user_location)
+        display_forecast(forecast, settings.user_location)
     except Exception as e:
         print(f"\n  ✗ Forecast unavailable: {e}\n")
 
@@ -518,7 +517,7 @@ def cmd_storage() -> None:
     display_storage_info(info)
 
 
-# quit 
+# quit
 
 
 def cmd_quit(tasks: list, save: bool = True) -> None:
@@ -541,10 +540,10 @@ def cmd_quit(tasks: list, save: bool = True) -> None:
     stats = calculate_stats(tasks) if tasks else {"done": 0, "total": 0, "rate": 0.0}
     print()
     if stats["total"] == 0:
-        print(f"  Goodbye, {USER_NAME}! No tasks — clean slate. 👋")
+        print(f"  Goodbye, {settings.user_name}! No tasks — clean slate. 👋")
     else:
         print(
-            f"  Goodbye, {USER_NAME}! "
+            f"  Goodbye, {settings.user_name}! "
             f"{stats['done']}/{stats['total']} tasks complete "
             f"({stats['rate']}%). Keep going! 👋"
         )

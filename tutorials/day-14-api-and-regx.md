@@ -45,11 +45,11 @@ Input: !! Server is down @work
   Priority : high (forced)
 
 > forecast
-  ── 3-Day Forecast — Delhi, IN ───────────────
+   3-Day Forecast — Delhi, IN ─
   Today      Mon 19 May   38°C   ☀  Clear
   Tomorrow   Tue 20 May   36°C   ⛅  Partly cloudy
   Wed 21 May              33°C   🌧  Rain showers
-  ────────────────────────────────────────────
+  
 ```
 
 ---
@@ -258,7 +258,7 @@ from .core.task_types import UrgentTask, RecurringTask, DeadlineTask
 from .config          import VALID_PRIORITIES, VALID_CATEGORIES
 from .errors          import ValidationError
 
-# ── Compiled Patterns ─────────────────────────────────────
+#  Compiled Patterns ─
 
 _URGENT_PREFIX    = re.compile(r"^!!\s*")
 _RECURRING_PREFIX = re.compile(r"^~(daily|weekly|monthly)\s+", re.IGNORECASE)
@@ -342,19 +342,19 @@ def parse_task_input(raw: str) -> ParseResult:
     category   = "work"
     due_date   = None
 
-    # ── Detect urgent prefix (!!) ──────────────────────────
+    #  Detect urgent prefix (!!) 
     if _URGENT_PREFIX.match(text):
         is_urgent = True
         priority  = "high"
         text      = _URGENT_PREFIX.sub("", text).strip()
 
-    # ── Detect recurring prefix (~daily/weekly/monthly) ────
+    #  Detect recurring prefix (~daily/weekly/monthly) 
     rec_match = _RECURRING_PREFIX.match(text)
     if rec_match and not is_urgent:
         recurrence = rec_match.group(1).lower()
         text       = text[rec_match.end():].strip()
 
-    # ── Extract #priority token ────────────────────────────
+    #  Extract #priority token 
     pri_match = _PRIORITY_TOKEN.search(text)
     if pri_match:
         detected = pri_match.group(1).lower()
@@ -362,7 +362,7 @@ def parse_task_input(raw: str) -> ParseResult:
             priority = detected
         text = _PRIORITY_TOKEN.sub("", text).strip()
 
-    # ── Extract @category token ────────────────────────────
+    #  Extract @category token 
     cat_match = _CATEGORY_TOKEN.search(text)
     if cat_match:
         detected = cat_match.group(1).lower()
@@ -376,7 +376,7 @@ def parse_task_input(raw: str) -> ParseResult:
             )
         text = _CATEGORY_TOKEN.sub("", text).strip()
 
-    # ── Extract !date token ────────────────────────────────
+    #  Extract !date token 
     date_match = _DUE_DATE_TOKEN.search(text)
     if date_match and not is_urgent and not recurrence:
         date_str = date_match.group(1)
@@ -391,7 +391,7 @@ def parse_task_input(raw: str) -> ParseResult:
             )
         text = _DUE_DATE_TOKEN.sub("", text).strip()
 
-    # ── Clean up remaining text as the title ──────────────
+    #  Clean up remaining text as the title 
     title = _WHITESPACE.sub(" ", text).strip()
 
     if not title:
@@ -584,7 +584,7 @@ def display_forecast(forecast: list[dict], location_name: str) -> None:
         print("\n  Forecast not available.\n")
         return
 
-    print(f"\n  ── {len(forecast)}-Day Forecast — {location_name} ─────────")
+    print(f"\n   {len(forecast)}-Day Forecast — {location_name} ─")
 
     for i, day in enumerate(forecast):
         # Parse and format the date

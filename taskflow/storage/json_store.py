@@ -72,7 +72,7 @@ def load_tasks_safe(
         return [], str(e)
 
 
-# ─── Helpers ──────────────────────────────────────────────
+# ─ Helpers 
 
 def get_next_id(tasks: list) -> int:
     """
@@ -91,7 +91,7 @@ def get_next_id(tasks: list) -> int:
     return max(ids, default=0) + 1
 
 
-# ─── Backup ───────────────────────────────────────────────
+# ─ Backup ─
 
 def backup_tasks(filepath: Path = DATA_FILE) -> bool:
     """
@@ -122,7 +122,7 @@ def backup_tasks(filepath: Path = DATA_FILE) -> bool:
         return False
 
 
-# ─── Storage metadata ─────────────────────────────────────
+# ─ Storage metadata ─
 
 def get_storage_info(filepath: Path = DATA_FILE) -> dict:
     """

@@ -344,7 +344,7 @@ __all__ = [
 ]
 
 
-# ─── Limit checks ─────────────────────────────────────────
+# ─ Limit checks ─
 
 def get_task_limit(plan: str | None = None) -> int:
     """
@@ -365,7 +365,7 @@ def is_at_limit(tasks: list, plan: str | None = None) -> bool:
     return len(tasks) >= get_task_limit(plan)
 
 
-# ─── Add ──────────────────────────────────────────────────
+# ─ Add 
 
 def add_task_to_list(
     tasks: list,
@@ -398,7 +398,7 @@ def add_task_to_list(
     return task
 
 
-# ─── Remove ───────────────────────────────────────────────
+# ─ Remove ─
 
 def remove_task_by_index(tasks: list, index: int) -> Task:
     """
@@ -440,7 +440,7 @@ def remove_task_by_id(tasks: list, task_id: int) -> Task:
     return tasks.pop(index)
 
 
-# ─── Done ─────────────────────────────────────────────────
+# ─ Done ─
 
 def mark_task_done(tasks: list, index: int) -> Task:
     """
@@ -473,7 +473,7 @@ def mark_task_done(tasks: list, index: int) -> Task:
     return task
 
 
-# ─── Rename ───────────────────────────────────────────────
+# ─ Rename ─
 
 def rename_task(tasks: list, index: int, new_title: str) -> Task:
     """
@@ -511,7 +511,7 @@ def rename_task(tasks: list, index: int, new_title: str) -> Task:
     return task
 
 
-# ─── Lookup ───────────────────────────────────────────────
+# ─ Lookup ─
 
 def find_task_by_id(tasks: list, task_id: int) -> Task:
     """
@@ -548,7 +548,7 @@ def find_task_index_by_id(tasks: list, task_id: int) -> int:
     raise TaskNotFoundError(task_id)
 
 
-# ─── Filtering ────────────────────────────────────────────
+# ─ Filtering 
 
 def filter_tasks(
     tasks: list,
@@ -618,7 +618,7 @@ def get_overdue_tasks(tasks: list) -> list:
     return [t for t in tasks if _is_overdue(t)]
 
 
-# ─── Stats ────────────────────────────────────────────────
+# ─ Stats 
 
 def get_summary_stats(tasks: list) -> dict:
     """
@@ -632,7 +632,7 @@ def get_summary_stats(tasks: list) -> dict:
     return calculate_stats(tasks)
 
 
-# ─── Private helpers ──────────────────────────────────────
+# ─ Private helpers 
 
 def _attr(task, key: str, default=""):
     if isinstance(task, Task):

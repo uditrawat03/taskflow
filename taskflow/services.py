@@ -1,24 +1,12 @@
-# taskflow/services.py
-# TaskFlow AI — Pure business logic services.
-#
-# These functions are the testable core of the application.
-# They NEVER print, NEVER read from stdin, and NEVER depend on
-# the display layer.
-#
-# Rules:
-#   - Every function is either a pure query (returns value, no side effects)
-#     or a clear command (mutates one thing, returns None or the result).
-#   - No print() calls anywhere in this module.
-#   - All validation raises ValidationError — never silent failure.
-#
-# Version history:
-#   Day 21 — extracted from display/commands.py (TD-001 resolution)
-
-from .config import PLAN_LIMITS, USER_PLAN, OVERDUE_THRESHOLD_DAYS
+from .config import PLAN_LIMITS, OVERDUE_THRESHOLD_DAYS
 from .errors import ValidationError, TaskNotFoundError
 from .core.task       import Task
 from .core.task_types import RecurringTask
 from .core.stats      import calculate_stats
+
+from .env_config import get_settings
+
+settings = get_settings()
 
 __all__ = [
     "add_task_to_list",
@@ -37,7 +25,7 @@ __all__ = [
 ]
 
 
-# ─── Limit checks ─────────────────────────────────────────
+# ─ Limit checks ─
 
 def get_task_limit(plan: str | None = None) -> int:
     """
@@ -49,7 +37,7 @@ def get_task_limit(plan: str | None = None) -> int:
     Returns:
         int: Maximum number of tasks allowed.
     """
-    p = plan or USER_PLAN
+    p = plan or settings.user_plan
     return PLAN_LIMITS.get(p, PLAN_LIMITS["free"])
 
 
@@ -58,7 +46,7 @@ def is_at_limit(tasks: list, plan: str | None = None) -> bool:
     return len(tasks) >= get_task_limit(plan)
 
 
-# ─── Add ──────────────────────────────────────────────────
+# ─ Add 
 
 def add_task_to_list(
     tasks: list,
@@ -83,7 +71,7 @@ def add_task_to_list(
     if len(tasks) >= limit:
         raise ValidationError(
             f"Task limit reached ({limit} tasks on "
-            f"{plan or USER_PLAN} plan). Upgrade to premium.",
+            f"{plan or settings.user_plan} plan). Upgrade to premium.",
             field="tasks",
             value=len(tasks),
         )
@@ -91,7 +79,7 @@ def add_task_to_list(
     return task
 
 
-# ─── Remove ───────────────────────────────────────────────
+# ─ Remove ─
 
 def remove_task_by_index(tasks: list, index: int) -> Task:
     """
@@ -133,7 +121,7 @@ def remove_task_by_id(tasks: list, task_id: int) -> Task:
     return tasks.pop(index)
 
 
-# ─── Done ─────────────────────────────────────────────────
+# ─ Done ─
 
 def mark_task_done(tasks: list, index: int) -> Task:
     """
@@ -166,7 +154,7 @@ def mark_task_done(tasks: list, index: int) -> Task:
     return task
 
 
-# ─── Rename ───────────────────────────────────────────────
+# ─ Rename ─
 
 def rename_task(tasks: list, index: int, new_title: str) -> Task:
     """
@@ -204,7 +192,7 @@ def rename_task(tasks: list, index: int, new_title: str) -> Task:
     return task
 
 
-# ─── Lookup ───────────────────────────────────────────────
+# ─ Lookup ─
 
 def find_task_by_id(tasks: list, task_id: int) -> Task:
     """
@@ -241,7 +229,7 @@ def find_task_index_by_id(tasks: list, task_id: int) -> int:
     raise TaskNotFoundError(task_id)
 
 
-# ─── Filtering ────────────────────────────────────────────
+# ─ Filtering 
 
 def filter_tasks(
     tasks: list,
@@ -311,7 +299,7 @@ def get_overdue_tasks(tasks: list) -> list:
     return [t for t in tasks if _is_overdue(t)]
 
 
-# ─── Stats ────────────────────────────────────────────────
+# ─ Stats 
 
 def get_summary_stats(tasks: list) -> dict:
     """
@@ -325,7 +313,7 @@ def get_summary_stats(tasks: list) -> dict:
     return calculate_stats(tasks)
 
 
-# ─── Private helpers ──────────────────────────────────────
+# ─ Private helpers 
 
 def _attr(task, key: str, default=""):
     if isinstance(task, Task):

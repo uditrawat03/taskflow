@@ -1,15 +1,3 @@
-# taskflow/context.py
-# TaskFlow AI — Custom context managers for safe, reversible operations.
-#
-# Context managers:
-#   task_snapshot        — snapshot and restore task list on failure
-#   timed_operation      — time a block and warn if slow
-#   temporary_data_file  — backup file before risky operations
-#   suppress_storage_errors — suppress StorageError with optional logging
-#
-# Version history:
-#   Day 17 — initial implementation
-
 import copy
 import time
 import shutil

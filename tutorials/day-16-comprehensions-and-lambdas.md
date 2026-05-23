@@ -372,7 +372,7 @@ class TaskFilter:
         """
         self._tasks: list[Task] = list(tasks)   # work on a copy
 
-    # ── Status filters ────────────────────────────────────
+    #  Status filters 
 
     def pending(self) -> "TaskFilter":
         """Keep only pending (not done) tasks."""
@@ -389,7 +389,7 @@ class TaskFilter:
         self._tasks = [t for t in self._tasks if t.is_overdue(threshold_days)]
         return self
 
-    # ── Attribute filters ─────────────────────────────────
+    #  Attribute filters ─
 
     def by_priority(self, priority: str) -> "TaskFilter":
         """Keep tasks matching the given priority."""
@@ -408,7 +408,7 @@ class TaskFilter:
         self._tasks = [t for t in self._tasks if isinstance(t, task_type)]
         return self
 
-    # ── Text filters ──────────────────────────────────────
+    #  Text filters 
 
     def search(self, keyword: str) -> "TaskFilter":
         """Keep tasks whose title contains the keyword (case-insensitive)."""
@@ -436,7 +436,7 @@ class TaskFilter:
                        if compiled.search(t.title)]
         return self
 
-    # ── Date filters ──────────────────────────────────────
+    #  Date filters 
 
     def due_within(self, days: int) -> "TaskFilter":
         """Keep DeadlineTask instances due within the given number of days."""
@@ -453,7 +453,7 @@ class TaskFilter:
         self._tasks = [t for t in self._tasks if t.age_days() <= days]
         return self
 
-    # ── Custom filter ─────────────────────────────────────
+    #  Custom filter ─
 
     def where(self, predicate: Callable[[Task], bool]) -> "TaskFilter":
         """
@@ -468,7 +468,7 @@ class TaskFilter:
         self._tasks = [t for t in self._tasks if predicate(t)]
         return self
 
-    # ── Sorting ───────────────────────────────────────────
+    #  Sorting ─
 
     def sort_by(self, key: str, reverse: bool = False) -> "TaskFilter":
         """
@@ -494,7 +494,7 @@ class TaskFilter:
                              key=sort_keys[key], reverse=reverse)
         return self
 
-    # ── Limiting ──────────────────────────────────────────
+    #  Limiting 
 
     def limit(self, n: int) -> "TaskFilter":
         """Keep only the first N tasks."""
@@ -506,7 +506,7 @@ class TaskFilter:
         self._tasks = self._tasks[n:]
         return self
 
-    # ── Terminal operations ───────────────────────────────
+    #  Terminal operations ─
 
     def get(self) -> list[Task]:
         """Return the filtered task list."""

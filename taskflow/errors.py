@@ -1,19 +1,3 @@
-# taskflow/errors.py
-# TaskFlow AI — Custom exception hierarchy.
-# All application exceptions inherit from TaskFlowError.
-#
-# Hierarchy:
-#   TaskFlowError
-#     ├── StorageError
-#     ├── WeatherError
-#     ├── ValidationError
-#     └── TaskNotFoundError
-#
-# Version history:
-#   Day 10 — initial exception hierarchy
-#   Day 11 — moved into package structure
-
-
 class TaskFlowError(Exception):
     """
     Base exception for all TaskFlow AI errors.

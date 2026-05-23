@@ -1,6 +1,3 @@
-# taskflow/core/__init__.py
-# Public API for the core subpackage.
-
 from .task import Task
 from .task_types import UrgentTask, RecurringTask, DeadlineTask
 from .task_factory import task_from_dict

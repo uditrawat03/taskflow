@@ -1,17 +1,3 @@
-# taskflow/decorators.py
-# TaskFlow AI — Cross-cutting decorator library.
-#
-# Decorators:
-#   @timer           — measure execution time
-#   @retry           — retry on failure with backoff
-#   @validate_non_empty — guard commands against empty task lists
-#   @validate_tasks_arg — type-check the tasks argument
-#   @log_call        — log function entry and return value
-#   @deprecated      — emit DeprecationWarning on every call
-#
-# Version history:
-#   Day 17 — initial implementation
-
 import time
 import logging
 import functools

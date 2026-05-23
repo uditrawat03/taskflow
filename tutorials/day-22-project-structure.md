@@ -19,57 +19,57 @@ A finalised, consistent package structure with TD-002 resolved, a new `taskflow/
 
 ```
 taskflow-project/
-├── taskflow/               ← application package
-│   ├── __init__.py         ← public API
-│   ├── config.py           ← all constants
-│   ├── errors.py           ← exception hierarchy
-│   ├── services.py         ← pure business logic (new Day 21)
-│   ├── utils.py            ← shared helpers (new Day 21)
-│   ├── parser.py           ← input parser
-│   ├── filters.py          ← TaskFilter pipeline
-│   ├── decorators.py       ← @timer, @retry, etc.
-│   ├── context.py          ← context managers
-│   ├── shell.py            ← interactive loop
-│   ├── cli.py              ← argparse one-shot
-│   ├── main.py             ← entry point
-│   ├── core/
-│   │   ├── __init__.py
-│   │   ├── task.py
-│   │   ├── task_types.py
-│   │   ├── task_factory.py
-│   │   └── stats.py
-│   ├── storage/
-│   │   ├── __init__.py
-│   │   └── json_store.py
-│   ├── integrations/
-│   │   ├── __init__.py
-│   │   └── weather.py
-│   └── display/
-│       ├── __init__.py
-│       ├── renderer.py     ← only module that calls print()
-│       └── commands.py     ← thin command handlers
-├── tests/
-│   ├── __init__.py
-│   ├── conftest.py         ← shared fixtures (today)
-│   └── test_services.py    ← first real tests (today)
-├── docs/
-│   ├── architecture.md     ← system diagram description
-│   ├── technical-debt.md   ← updated
-│   └── adr/
-│       ├── ADR-001.md
-│       └── ADR-002.md
-├── scripts/
-│   └── setup.sh
-├── data/                   ← git-ignored runtime data
-├── run.py
-├── pyproject.toml
-├── requirements.in
-├── requirements-dev.in
-├── .gitignore
-├── .env.example
-├── .pre-commit-config.yaml
-├── README.md
-└── CHANGELOG.md
+├ taskflow/               ← application package
+│   ├ __init__.py         ← public API
+│   ├ config.py           ← all constants
+│   ├ errors.py           ← exception hierarchy
+│   ├ services.py         ← pure business logic (new Day 21)
+│   ├ utils.py            ← shared helpers (new Day 21)
+│   ├ parser.py           ← input parser
+│   ├ filters.py          ← TaskFilter pipeline
+│   ├ decorators.py       ← @timer, @retry, etc.
+│   ├ context.py          ← context managers
+│   ├ shell.py            ← interactive loop
+│   ├ cli.py              ← argparse one-shot
+│   ├ main.py             ← entry point
+│   ├ core/
+│   │   ├ __init__.py
+│   │   ├ task.py
+│   │   ├ task_types.py
+│   │   ├ task_factory.py
+│   │   └ stats.py
+│   ├ storage/
+│   │   ├ __init__.py
+│   │   └ json_store.py
+│   ├ integrations/
+│   │   ├ __init__.py
+│   │   └ weather.py
+│   └ display/
+│       ├ __init__.py
+│       ├ renderer.py     ← only module that calls print()
+│       └ commands.py     ← thin command handlers
+├ tests/
+│   ├ __init__.py
+│   ├ conftest.py         ← shared fixtures (today)
+│   └ test_services.py    ← first real tests (today)
+├ docs/
+│   ├ architecture.md     ← system diagram description
+│   ├ technical-debt.md   ← updated
+│   └ adr/
+│       ├ ADR-001.md
+│       └ ADR-002.md
+├ scripts/
+│   └ setup.sh
+├ data/                   ← git-ignored runtime data
+├ run.py
+├ pyproject.toml
+├ requirements.in
+├ requirements-dev.in
+├ .gitignore
+├ .env.example
+├ .pre-commit-config.yaml
+├ README.md
+└ CHANGELOG.md
 ```
 
 ---

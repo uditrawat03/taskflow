@@ -97,43 +97,43 @@ Draw (on paper, whiteboard, or in a tool like Excalidraw) the complete system at
 **Level 1 — Context (who uses it and what it connects to):**
 
 ```
-┌─────────────────────────────────────────┐
+┌─┐
 │              TaskFlow AI                │
 │                                         │
-│  User ──► CLI / Shell ──► Task Storage  │
+│  User ► CLI / Shell ► Task Storage  │
 │                    │                    │
-│                    └──► Weather API     │
-└─────────────────────────────────────────┘
+│                    └► Weather API     │
+└─┘
 ```
 
 **Level 2 — Container (what modules exist):**
 
 ```
-┌────────────────────────────────────────────────────────┐
+┌┐
 │  taskflow package                                       │
 │                                                         │
-│  ┌──────────┐  ┌──────────┐  ┌─────────────────────┐  │
+│  ┌┐  ┌┐  ┌─┐  │
 │  │ shell.py │  │  cli.py  │  │  display/commands.py │  │
-│  └────┬─────┘  └────┬─────┘  └──────────┬──────────┘  │
+│  └┬─┘  └┬─┘  └┬┘  │
 │       │              │                   │              │
-│  ┌────▼──────────────▼───────────────────▼──────────┐  │
+│  ┌▼▼─▼┐  │
 │  │              core/                               │  │
 │  │  task.py │ task_types.py │ task_factory.py       │  │
 │  │  stats.py                                        │  │
-│  └────────────────────┬──────────────────────────────┘  │
+│  └┬┘  │
 │                        │                               │
-│  ┌─────────────────────▼──────────┐                   │
+│  ┌─▼┐                   │
 │  │  storage/json_store.py         │                   │
-│  └────────────────────────────────┘                   │
+│  └┘                   │
 │                                                         │
-│  ┌─────────────────────────────────┐                  │
-│  │  integrations/weather.py        │──► Open-Meteo   │
-│  └─────────────────────────────────┘                  │
+│  ┌─┐                  │
+│  │  integrations/weather.py        │► Open-Meteo   │
+│  └─┘                  │
 │                                                         │
 │  Cross-cutting: decorators.py, context.py,            │
 │                 filters.py, parser.py,                │
 │                 errors.py, config.py                  │
-└────────────────────────────────────────────────────────┘
+└┘
 ```
 
 **Level 3 — Component (how modules interact):**

@@ -64,9 +64,9 @@ Working Tree          Staging Area          Repository
 (your files)          (index / cache)       (.git/objects)
      │                      │                     │
      │   git add file       │   git commit        │
-     │─────────────────────▶│────────────────────▶│
+     │─▶│▶│
      │                      │                     │
-     │◀─────────────────────│◀────────────────────│
+     │◀─│◀│
      │   git checkout       │   git reset HEAD    │
 ```
 
@@ -173,9 +173,9 @@ The **scope** (in parentheses) is optional but useful — it names the module or
 **GitHub Flow** is the simplest effective branching strategy:
 
 ```
-main ──●──────────────────────────●──────────► (always deployable)
+main ●●► (always deployable)
         \                        /
-         ●──●──●  feature/x  ──●   (short-lived feature branches)
+         ●●●  feature/x  ●   (short-lived feature branches)
 ```
 
 Rules:
@@ -258,15 +258,15 @@ git blame taskflow/storage/json_store.py
 **Merge** — creates a merge commit that preserves the full branch history:
 
 ```
-main:    A──B──────────M
+main:    ABM
               \       /
-feature:       C──D──E
+feature:       CDE
 ```
 
 **Rebase** — replays feature commits on top of main, giving a linear history:
 
 ```
-main:    A──B──C'──D'──E'
+main:    ABC'D'E'
 ```
 
 Use **merge** for long-lived branches (feature is different enough to deserve its own story). Use **rebase** for short-lived branches to keep `main` history clean and linear.

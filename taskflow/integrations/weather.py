@@ -174,7 +174,7 @@ def display_weather(weather: dict | None) -> None:
         return
 
     print()
-    print("  ── Current Weather ──────────────────────")
+    print("   Current Weather ")
     print(f"  Location    : {weather.get('location', 'Unknown')}")
     print(
         f"  Temperature : {weather.get('temperature')}°C "
@@ -184,7 +184,7 @@ def display_weather(weather: dict | None) -> None:
     print(f"  Humidity    : {weather.get('humidity')}%")
     print(f"  Wind        : {weather.get('wind_speed')} km/h")
     print(f"  Updated     : {weather.get('fetched_at')}")
-    print("  ─────────────────────────────────────────")
+    print("  ─")
     print()
 
 
@@ -199,7 +199,7 @@ def get_weather_summary(weather: dict | None) -> str:
     )
 
 
-# ─── Forecast ─────────────────────────────────────────────
+# ─ Forecast ─
 
 
 def fetch_forecast(
@@ -281,7 +281,7 @@ def display_forecast(forecast: list[dict] | None, location_name: str = "") -> No
         print("\n  Forecast not available.\n")
         return
 
-    header = f"  ── {len(forecast)}-Day Forecast"
+    header = f"   {len(forecast)}-Day Forecast"
     if location_name:
         header += f" — {location_name}"
     print()

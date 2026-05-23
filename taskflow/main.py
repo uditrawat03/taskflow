@@ -1,7 +1,6 @@
 import sys
-from .config import USER_LATITUDE, USER_LONGITUDE, USER_LOCATION, VERSION
-from .errors import StorageError
-from .storage.json_store import load_tasks_safe, backup_tasks
+from .env_config import get_settings
+from .config import VERSION
 from .display.renderer import display_header
 from .logging_config import setup_logging
 
@@ -9,78 +8,63 @@ __all__ = ["main"]
 
 
 def main() -> None:
-    """
-    TaskFlow AI entry point.
+    """Application entry point."""
 
-    Supports two modes:
-        Interactive: python run.py
-        One-shot:    python run.py add "Review PR #high @work"
-                     python run.py view --priority high
-    """
+    args = sys.argv[1:]
+    settings = get_settings()
 
-    args       = sys.argv[1:]
-    no_weather = "--no-weather" in args
-    debug_mode = "--debug" in args
-
-    # Configure logging FIRST — before anything else runs
+    # Configure logging from settings
     setup_logging(
-        level   = "DEBUG" if debug_mode else "INFO",
-        console = True,
-        json_file = True,
+        level="DEBUG" if "--debug" in args else settings.log_level,
+        log_dir=settings.log_dir if settings.log_to_file else None,
+        json_file=settings.log_to_file,
+        console=settings.log_to_console,
     )
 
     import logging
-    logger = logging.getLogger(__name__)
-    logger.info("TaskFlow AI starting", extra={"version": VERSION})
 
-    # Load tasks
+    logger = logging.getLogger(__name__)
+    logger.info(
+        "TaskFlow AI starting", extra={"version": VERSION, "user": settings.user_name}
+    )
+
+    # Load tasks using path from settings
+    from .storage.json_store import load_tasks_safe, backup_tasks
+
     print()
     print("  Loading tasks...", end=" ", flush=True)
-    tasks, load_error = load_tasks_safe()
+    tasks, load_error = load_tasks_safe(settings.data_file)
 
     if load_error:
         print(f"\n  ⚠  {load_error}")
+        logger.error("Task load failed: %s", load_error)
         print("  Creating backup and starting fresh.\n")
         try:
-            backup_tasks()
+            backup_tasks(settings.data_file)
         except Exception:
-            pass  # backup failure is never critical
+            pass
         tasks = []
     else:
         count = len(tasks)
         print(f"✓ {count} task{'s' if count != 1 else ''} loaded.")
+        logger.info("Tasks loaded", extra={"count": count})
 
-    #  Fetch weather ─
+    # Weather
     weather = None
-    if not no_weather:
+    if settings.weather_enabled and "--no-weather" not in args:
         try:
             from .integrations.weather import fetch_weather
 
-            weather = fetch_weather(USER_LATITUDE, USER_LONGITUDE, USER_LOCATION)
-        except Exception:
-            weather = None  # weather is never critical
+            weather = fetch_weather(
+                settings.user_latitude,
+                settings.user_longitude,
+                settings.user_location,
+            )
+        except Exception as e:
+            logger.warning("Weather fetch failed: %s", e)
 
-    #  Render header ─
     display_header(weather)
 
-    # Dispatch
-    # Full argparse + dual-mode dispatch lives in cli.py (Day 15).
-    # Check if any non-flag arguments were passed — if so, try CLI dispatch.
-    non_flag_args = [a for a in args if not a.startswith("--")]
-
-    if non_flag_args:
-        # One-shot CLI mode
-        try:
-            from .cli import build_parser, run_one_shot
-
-            parser = build_parser()
-            parsed = parser.parse_args(args)
-            if run_one_shot(parsed, tasks):
-                return
-        except ImportError:
-            pass  # cli.py not available yet — fall through to shell
-
-    # Interactive shell mode
     from .shell import run_interactive_shell
 
     run_interactive_shell(tasks)

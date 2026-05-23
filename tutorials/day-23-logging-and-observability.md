@@ -72,16 +72,16 @@ Python logging is organised as a tree of **loggers**, each identified by a dotte
 
 ```
 root
-└── taskflow
-    ├── taskflow.main
-    ├── taskflow.storage
-    │   └── taskflow.storage.json_store
-    ├── taskflow.core
-    │   └── taskflow.core.task
-    ├── taskflow.display
-    │   └── taskflow.display.commands
-    └── taskflow.integrations
-        └── taskflow.integrations.weather
+└ taskflow
+    ├ taskflow.main
+    ├ taskflow.storage
+    │   └ taskflow.storage.json_store
+    ├ taskflow.core
+    │   └ taskflow.core.task
+    ├ taskflow.display
+    │   └ taskflow.display.commands
+    └ taskflow.integrations
+        └ taskflow.integrations.weather
 ```
 
 By convention, every module gets its own logger named after the module:
@@ -316,7 +316,7 @@ def setup_logging(
     handlers: dict = {}
     handler_names: list[str] = []
 
-    # ── Console handler ───────────────────────────────────
+    #  Console handler ─
     if console:
         handlers["console"] = {
             "class":     "logging.StreamHandler",
@@ -326,7 +326,7 @@ def setup_logging(
         }
         handler_names.append("console")
 
-    # ── Rotating JSON file handler ────────────────────────
+    #  Rotating JSON file handler 
     if json_file:
         resolved_dir = log_dir or (BASE_DIR / "logs")
         resolved_dir.mkdir(parents=True, exist_ok=True)

@@ -32,13 +32,13 @@ Commands: add | view | done | remove | filter | search | stats | weather | quit
 
 > weather
 
-  ── Current Weather ─────────────────────
+   Current Weather ─
   Location    : Delhi, India
   Temperature : 38°C (feels like 41°C)
   Condition   : Clear sky
   Humidity    : 22%
   Wind        : 14 km/h NW
-  ────────────────────────────────────────
+  
 ```
 
 ---
@@ -241,7 +241,7 @@ import datetime
 import shutil
 from pathlib import Path
 
-# ─── Configuration ────────────────────────────────────────
+# ─ Configuration 
 BASE_DIR  = Path(__file__).parent
 DATA_FILE = BASE_DIR / "taskflow_tasks.json"
 DATE_FMT  = "%Y-%m-%d %H:%M"
@@ -414,7 +414,7 @@ print(response.json())        # full JSON response
 import requests
 from datetime import datetime
 
-# ─── Configuration ────────────────────────────────────────
+# ─ Configuration 
 API_URL = "https://api.open-meteo.com/v1/forecast"
 TIMEOUT = 10   # seconds
 
@@ -515,7 +515,7 @@ def display_weather(weather: dict) -> None:
         return
 
     print()
-    print("  ── Current Weather ──────────────────────")
+    print("   Current Weather ")
     print(f"  Location    : {weather['location']}")
     print(f"  Temperature : {weather['temperature']}°C "
           f"(feels like {weather['feels_like']}°C)")
@@ -523,7 +523,7 @@ def display_weather(weather: dict) -> None:
     print(f"  Humidity    : {weather['humidity']}%")
     print(f"  Wind        : {weather['wind_speed']} km/h")
     print(f"  Updated     : {weather['fetched_at']}")
-    print("  ────────────────────────────────────────")
+    print("  ")
     print()
 
 
@@ -544,7 +544,7 @@ def get_weather_summary(weather: dict) -> str:
             f"{weather['condition']}")
 
 
-# ─── Quick test ───────────────────────────────────────────
+# ─ Quick test ─
 if __name__ == "__main__":
     print("Fetching weather for Delhi...")
     weather = fetch_weather(
@@ -707,7 +707,7 @@ Write a `compare_weather(cities)` function that takes a list of `(name, lat, lon
 
 ```
 City         Temp   Condition
-──────────────────────────────
+
 Delhi, IN    38°C   ☀ Clear
 Mumbai, IN   31°C   ⛅ Partly cloudy
 Bengaluru    27°C   🌧 Rain

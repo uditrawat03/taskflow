@@ -7,6 +7,12 @@ from taskflow.core.task_types import (
     DeadlineTask,
 )
 
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Load test environment before any taskflow imports
+load_dotenv(Path(__file__).parent.parent / ".env.test", override=True)
+
 
 @pytest.fixture(autouse=True)
 def reset_task_counter():

@@ -1,15 +1,3 @@
-# taskflow/cli.py
-# TaskFlow AI — Argument parser and one-shot CLI dispatcher.
-#
-# Supports dual-mode operation:
-#   Interactive: python run.py
-#   One-shot:    python run.py add "Review PR #high @work"
-#                python run.py view --priority high --pending
-#                python run.py done 3
-#
-# Version history:
-#   Day 15 — initial implementation with argparse + subcommands
-
 import argparse
 import sys
 from pathlib import Path
@@ -67,7 +55,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     subs = parser.add_subparsers(dest="command", metavar="command")
 
-    # ── add ───────────────────────────────────────────────
+    #  add ─
     p_add = subs.add_parser("add", help="Add a task (shorthand supported)")
     p_add.add_argument(
         "input",
@@ -76,7 +64,7 @@ def build_parser() -> argparse.ArgumentParser:
         help='Task input, e.g. "Review PR #high @work !2025-06-01"',
     )
 
-    # ── view ──────────────────────────────────────────────
+    #  view 
     p_view = subs.add_parser("view", help="View all tasks")
     p_view.add_argument("--priority", choices=["high", "medium", "low"],
                         help="Filter by priority")
@@ -90,26 +78,26 @@ def build_parser() -> argparse.ArgumentParser:
     p_view.add_argument("--limit",   type=int, default=None,
                         help="Show at most N tasks")
 
-    # ── done ──────────────────────────────────────────────
+    #  done 
     p_done = subs.add_parser("done", help="Mark a task as done by ID")
     p_done.add_argument("id", type=int, help="Task ID")
 
-    # ── remove ────────────────────────────────────────────
+    #  remove 
     p_remove = subs.add_parser("remove", help="Remove a task by ID")
     p_remove.add_argument("id", type=int, help="Task ID")
 
-    # ── search ────────────────────────────────────────────
+    #  search 
     p_search = subs.add_parser("search", help="Search tasks by keyword or regex")
     p_search.add_argument("keyword", help="Keyword or re:pattern")
 
-    # ── stats ─────────────────────────────────────────────
+    #  stats ─
     subs.add_parser("stats",    help="Show statistics dashboard")
 
-    # ── weather / forecast ────────────────────────────────
+    #  weather / forecast 
     subs.add_parser("weather",  help="Show current weather")
     subs.add_parser("forecast", help="Show 3-day weather forecast")
 
-    # ── backup / storage ──────────────────────────────────
+    #  backup / storage 
     subs.add_parser("backup",   help="Create a timestamped backup")
     subs.add_parser("storage",  help="Show storage file information")
 

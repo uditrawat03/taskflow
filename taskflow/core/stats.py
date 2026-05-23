@@ -1,11 +1,3 @@
-# taskflow/core/stats.py
-# TaskFlow AI — Task statistics calculations.
-# All functions are pure — no side effects, no printing.
-#
-# Version history:
-#   Day 11 — extracted from tasks.py
-#   Day 16 — refactored to use generator expressions throughout
-
 from collections import Counter
 from .task import Task
 
@@ -98,7 +90,7 @@ def most_productive_category(tasks: list) -> str | None:
     return counts.most_common(1)[0][0]
 
 
-# ─── Internal helpers — support both Task objects and dicts ───
+# ─ Internal helpers — support both Task objects and dicts ─
 
 
 def _is_done(task) -> bool:

@@ -1,10 +1,3 @@
-# taskflow/core/task_factory.py
-# TaskFlow AI — Polymorphic task deserialisation.
-# Creates the correct Task subclass from a stored dictionary.
-#
-# Version history:
-#   Day 13 — introduced alongside task_types.py
-
 from .task import Task
 from .task_types import UrgentTask, RecurringTask, DeadlineTask
 

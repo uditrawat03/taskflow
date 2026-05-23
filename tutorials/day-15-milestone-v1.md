@@ -372,7 +372,7 @@ def main() -> None:
     parser = build_parser()
     args   = parser.parse_args()
 
-    # ── Load tasks ────────────────────────────────────────
+    #  Load tasks 
     filepath = args.data if hasattr(args, "data") and args.data else None
     tasks, load_error = load_tasks_safe(filepath)
 
@@ -385,11 +385,11 @@ def main() -> None:
             pass
         tasks = []
 
-    # ── One-shot mode ─────────────────────────────────────
+    #  One-shot mode ─
     if run_one_shot(args, tasks):
         return   # command executed — exit
 
-    # ── Interactive mode ──────────────────────────────────
+    #  Interactive mode 
     weather = None
     if not (hasattr(args, "no_weather") and args.no_weather):
         weather = fetch_weather(USER_LATITUDE, USER_LONGITUDE, USER_LOCATION)
@@ -505,24 +505,24 @@ python run.py backup
 
 ```
 taskflow/               Python package
-├── __init__.py         Public API
-├── main.py             Entry point
-├── cli.py              Argument parser
-├── shell.py            Interactive shell
-├── parser.py           Natural language task parser
-├── config.py           Configuration constants
-├── errors.py           Custom exception hierarchy
-├── core/
-│   ├── task.py         Task base class
-│   ├── task_types.py   UrgentTask, RecurringTask, DeadlineTask
-│   ├── task_factory.py Polymorphic deserialization
-│   └── stats.py        Statistics calculations
-├── storage/
-│   └── json_store.py   JSON persistence with atomic writes
-├── integrations/
-│   └── weather.py      Open-Meteo weather API
-└── display/
-    └── renderer.py     Terminal UI rendering
+├ __init__.py         Public API
+├ main.py             Entry point
+├ cli.py              Argument parser
+├ shell.py            Interactive shell
+├ parser.py           Natural language task parser
+├ config.py           Configuration constants
+├ errors.py           Custom exception hierarchy
+├ core/
+│   ├ task.py         Task base class
+│   ├ task_types.py   UrgentTask, RecurringTask, DeadlineTask
+│   ├ task_factory.py Polymorphic deserialization
+│   └ stats.py        Statistics calculations
+├ storage/
+│   └ json_store.py   JSON persistence with atomic writes
+├ integrations/
+│   └ weather.py      Open-Meteo weather API
+└ display/
+    └ renderer.py     Terminal UI rendering
 
 run.py                  Root entry point
 requirements.txt        Dependencies

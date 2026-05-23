@@ -1,23 +1,9 @@
-# taskflow/core/task_types.py
-# TaskFlow AI — Specialised Task subclasses.
-#
-# Subclasses:
-#   UrgentTask    — always high priority, escalation note
-#   RecurringTask — auto-resets to pending after marking done
-#   DeadlineTask  — tracks due date, urgency label
-#
-# Version history:
-#   Day 13 — all three subclasses introduced
-
 import datetime
 from .task import Task
 from ..config import DATE_FMT
 from ..errors import ValidationError
 
 __all__ = ["UrgentTask", "RecurringTask", "DeadlineTask"]
-
-
-# ─── UrgentTask ───────────────────────────────────────────
 
 
 class UrgentTask(Task):
@@ -88,7 +74,7 @@ class UrgentTask(Task):
         return f"UrgentTask(id={self.id!r}, title={self.title!r}, done={self.done!r})"
 
 
-# ─── RecurringTask ────────────────────────────────────────
+# ─ RecurringTask
 
 
 class RecurringTask(Task):
@@ -187,7 +173,7 @@ class RecurringTask(Task):
         )
 
 
-# ─── DeadlineTask ─────────────────────────────────────────
+# ─ DeadlineTask ─
 
 
 class DeadlineTask(Task):

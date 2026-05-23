@@ -1,7 +1,10 @@
-from ..config import APP_NAME, VERSION, USER_NAME, USER_PLAN, PLAN_LIMITS
+from ..config import APP_NAME, VERSION, PLAN_LIMITS
 from ..core.task import Task
 from ..utils import truncate
 from ..core.task_types import DeadlineTask, RecurringTask, UrgentTask
+from ..env_config import get_settings
+settings = get_settings()
+
 
 __all__ = [
     "display_header",
@@ -15,7 +18,7 @@ __all__ = [
     "COMMANDS",
 ]
 
-# ── Command registry ──────────────────────────────────────
+#  Command registry 
 # Maps command name → description.
 # Update this dict when commands are added or removed.
 # display_help() loops over it automatically.
@@ -38,7 +41,7 @@ COMMANDS: dict[str, str] = {
 }
 
 
-# ─── Header ───────────────────────────────────────────────
+# ─ Header ─
 
 
 def display_header(weather: dict | None = None) -> None:
@@ -49,7 +52,7 @@ def display_header(weather: dict | None = None) -> None:
         weather (dict | None): Weather data from fetch_weather().
                                If provided, shows a one-line summary.
     """
-    max_tasks = PLAN_LIMITS.get(USER_PLAN, 10)
+    max_tasks = PLAN_LIMITS.get(settings.user_plan, 10)
 
     print("=" * 46)
     print(f"   {APP_NAME} — Task Manager v{VERSION}")
@@ -60,11 +63,11 @@ def display_header(weather: dict | None = None) -> None:
         location = weather.get("location", "")
         print(f"   📍 {location}  |  {emoji} {temp}°C  {cond}")
     print("=" * 46)
-    print(f"   Hello, {USER_NAME}!  Plan: {USER_PLAN.title()} ({max_tasks} tasks max)")
+    print(f"   Hello, {settings.user_name}!  Plan: {settings.user_plan.title()} ({max_tasks} tasks max)")
     print()
 
 
-# ─── Task table ───────────────────────────────────────────
+# ─ Task table ─
 
 
 def display_tasks(tasks: list[Task]) -> None:
@@ -127,7 +130,7 @@ def display_tasks(tasks: list[Task]) -> None:
     print()
 
 
-# ─── Task detail ──────────────────────────────────────────
+# ─ Task detail 
 
 
 def display_task_detail(task, index: int) -> None:
@@ -142,7 +145,7 @@ def display_task_detail(task, index: int) -> None:
     status = "✓ done" if done else "○ pending"
 
     print()
-    print(f"  ── Task Detail — #{index} {'─' * 30}")
+    print(f"   Task Detail — #{index} {'─' * 30}")
     print(f"  {'ID':<16}: {_attr(task, 'id', '?')}")
     print(f"  {'Title':<16}: {_attr(task, 'title', '')}")
     print(f"  {'Priority':<16}: {_attr(task, 'priority', '').upper()}")
@@ -176,7 +179,7 @@ def display_task_detail(task, index: int) -> None:
     print()
 
 
-# ─── Statistics dashboard ─────────────────────────────────
+# ─ Statistics dashboard ─
 
 
 def display_stats_dashboard(tasks: list) -> None:
@@ -192,7 +195,7 @@ def display_stats_dashboard(tasks: list) -> None:
     rate = round(done / total * 100, 1) if total > 0 else 0.0
 
     print()
-    print("  ── Task Statistics ──────────────────────────")
+    print("   Task Statistics ")
     print(f"  {'Total':<16}: {total}")
     print(f"  {'Done':<16}: {done}  ({rate}%)")
     print(f"  {'Pending':<16}: {pending}")
@@ -230,19 +233,19 @@ def display_stats_dashboard(tasks: list) -> None:
     print()
 
 
-# ─── Help ─────────────────────────────────────────────────
+# ─ Help ─
 
 
 def display_help() -> None:
     """Print the command reference table from the COMMANDS registry."""
     print()
-    print("  ── Commands ─────────────────────────────────")
+    print("   Commands ─")
     for cmd, desc in COMMANDS.items():
         print(f"    {cmd:<12} — {desc}")
     print()
 
 
-# ─── Storage info ─────────────────────────────────────────
+# ─ Storage info ─
 
 
 def display_storage_info(info: dict) -> None:
@@ -253,7 +256,7 @@ def display_storage_info(info: dict) -> None:
         info (dict): Output from storage.json_store.get_storage_info().
     """
     print()
-    print("  ── Storage Info ─────────────────────────────")
+    print("   Storage Info ─")
     if not info.get("exists"):
         print("  No storage file found yet.")
         print("  It will be created the first time you add a task.")
@@ -265,7 +268,7 @@ def display_storage_info(info: dict) -> None:
     print()
 
 
-# ─── Input helpers ────────────────────────────────────────
+# ─ Input helpers 
 
 
 def prompt_valid(prompt: str, valid_options: set, label: str = "option") -> str:
@@ -315,7 +318,7 @@ def prompt_task_number(tasks: list, action: str = "select") -> int | None:
     return index
 
 
-# ─── Private helpers ──────────────────────────────────────
+# ─ Private helpers 
 
 
 def _attr(task, key: str, default=""):

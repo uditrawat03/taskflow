@@ -1,4 +1,3 @@
-# taskflow/display/__init__.py
 from .renderer import (
     display_header,
     display_tasks,

@@ -56,19 +56,19 @@ A **virtual environment** is a self-contained directory that has its own Python 
 ```
 Without venv (global Python):
   System Python
-  └── site-packages/
-      ├── requests 2.31    ← which version is "right"?
-      ├── flask 3.0
-      └── django 5.1
+  └ site-packages/
+      ├ requests 2.31    ← which version is "right"?
+      ├ flask 3.0
+      └ django 5.1
 
 With venv (isolated):
   taskflow/.venv/
-  └── site-packages/
-      └── requests 2.31    ← exactly what taskflow needs
+  └ site-packages/
+      └ requests 2.31    ← exactly what taskflow needs
 
   other_project/.venv/
-  └── site-packages/
-      └── requests 2.28    ← exactly what other_project needs
+  └ site-packages/
+      └ requests 2.28    ← exactly what other_project needs
 ```
 
 Every Python project must use a virtual environment. No exceptions.
@@ -281,7 +281,7 @@ requires      = ["setuptools>=70", "wheel"]
 build-backend = "setuptools.backends.legacy:build"
 
 
-# ── Project Metadata ──────────────────────────────────────
+#  Project Metadata 
 
 [project]
 name        = "taskflow-ai"
@@ -325,7 +325,7 @@ Homepage   = "https://github.com/uditrawat03/taskflow"
 Repository = "https://github.com/uditrawat03/taskflow"
 
 
-# ── Tool Configuration ────────────────────────────────────
+#  Tool Configuration 
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -393,61 +393,61 @@ Create `.gitignore` in the project root:
 # .gitignore
 # TaskFlow AI
 
-# ── Virtual environments ──────────────────────────────────
+#  Virtual environments 
 .venv/
 venv/
 env/
 ENV/
 
-# ── Python cache ──────────────────────────────────────────
+#  Python cache 
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
 
-# ── Distribution / packaging ──────────────────────────────
+#  Distribution / packaging 
 build/
 dist/
 *.egg-info/
 *.egg
 MANIFEST
 
-# ── Testing ───────────────────────────────────────────────
+#  Testing ─
 .pytest_cache/
 .coverage
 htmlcov/
 .tox/
 
-# ── Type checking ─────────────────────────────────────────
+#  Type checking ─
 .mypy_cache/
 .dmypy.json
 dmypy.json
 
-# ── IDE and editors ───────────────────────────────────────
+#  IDE and editors ─
 .vscode/settings.json
 .idea/
 *.swp
 *.swo
 *~
 
-# ── OS files ──────────────────────────────────────────────
+#  OS files 
 .DS_Store
 Thumbs.db
 
-# ── Application data ──────────────────────────────────────
+#  Application data 
 data/
 *.tmp
 taskflow_tasks*.json
 taskflow_backup_*.json
 
-# ── Secrets ───────────────────────────────────────────────
+#  Secrets ─
 .env
 .env.local
 .env.*.local
 secrets.py
 
-# ── Logs ──────────────────────────────────────────────────
+#  Logs 
 *.log
 logs/
 ```
@@ -482,49 +482,49 @@ After Day 18, the full project layout looks like this:
 ```
 taskflow/                    ← root of the repository
 │
-├── taskflow/                ← Python package
-│   ├── __init__.py
-│   ├── main.py
-│   ├── shell.py
-│   ├── cli.py
-│   ├── parser.py
-│   ├── config.py
-│   ├── errors.py
-│   ├── decorators.py
-│   ├── context.py
-│   ├── filters.py
-│   ├── core/
-│   │   ├── __init__.py
-│   │   ├── task.py
-│   │   ├── task_types.py
-│   │   ├── task_factory.py
-│   │   └── stats.py
-│   ├── storage/
-│   │   ├── __init__.py
-│   │   └── json_store.py
-│   ├── integrations/
-│   │   ├── __init__.py
-│   │   └── weather.py
-│   └── display/
-│       ├── __init__.py
-│       └── renderer.py
+├ taskflow/                ← Python package
+│   ├ __init__.py
+│   ├ main.py
+│   ├ shell.py
+│   ├ cli.py
+│   ├ parser.py
+│   ├ config.py
+│   ├ errors.py
+│   ├ decorators.py
+│   ├ context.py
+│   ├ filters.py
+│   ├ core/
+│   │   ├ __init__.py
+│   │   ├ task.py
+│   │   ├ task_types.py
+│   │   ├ task_factory.py
+│   │   └ stats.py
+│   ├ storage/
+│   │   ├ __init__.py
+│   │   └ json_store.py
+│   ├ integrations/
+│   │   ├ __init__.py
+│   │   └ weather.py
+│   └ display/
+│       ├ __init__.py
+│       └ renderer.py
 │
-├── tests/                   ← test suite (Day 25)
-│   └── __init__.py
+├ tests/                   ← test suite (Day 25)
+│   └ __init__.py
 │
-├── data/                    ← runtime data (git-ignored)
-│   └── taskflow_tasks.json
+├ data/                    ← runtime data (git-ignored)
+│   └ taskflow_tasks.json
 │
-├── run.py                   ← project entry point
-├── pyproject.toml           ← project config and metadata
-├── requirements.in          ← direct production deps (hand-written)
-├── requirements.txt         ← pinned production deps (generated)
-├── requirements-dev.in      ← direct dev deps (hand-written)
-├── requirements-dev.txt     ← pinned dev deps (generated)
-├── .gitignore
-├── .env.example             ← template for environment variables
-├── README.md
-└── CHANGELOG.md
+├ run.py                   ← project entry point
+├ pyproject.toml           ← project config and metadata
+├ requirements.in          ← direct production deps (hand-written)
+├ requirements.txt         ← pinned production deps (generated)
+├ requirements-dev.in      ← direct dev deps (hand-written)
+├ requirements-dev.txt     ← pinned dev deps (generated)
+├ .gitignore
+├ .env.example             ← template for environment variables
+├ README.md
+└ CHANGELOG.md
 ```
 
 ---

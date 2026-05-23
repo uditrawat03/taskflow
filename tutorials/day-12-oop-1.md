@@ -334,7 +334,7 @@ class Task:
             task_id  (int | None): Explicit ID (used when loading from storage).
                                    If None, auto-increments the class counter.
         """
-        # ── Validate ──────────────────────────────────────
+        #  Validate 
         title    = title.strip()
         priority = priority.strip().lower()
         category = category.strip().lower()
@@ -352,7 +352,7 @@ class Task:
             raise ValidationError(f"Invalid category",
                                    field="category", value=category)
 
-        # ── Assign ID ─────────────────────────────────────
+        #  Assign ID ─
         if task_id is not None:
             self.id = task_id
             # Keep counter ahead of any explicitly assigned ID
@@ -361,7 +361,7 @@ class Task:
             Task._id_counter += 1
             self.id = Task._id_counter
 
-        # ── Set Attributes ────────────────────────────────
+        #  Set Attributes 
         self.title      = title
         self._priority  = priority
         self._category  = category
@@ -369,7 +369,7 @@ class Task:
         self.done       = False
         self.created_at = datetime.datetime.now().strftime(DATE_FMT)
 
-    # ── Properties ────────────────────────────────────────
+    #  Properties 
 
     @property
     def priority(self) -> str:
@@ -400,7 +400,7 @@ class Task:
         """Numeric priority for sorting. High=3, Medium=2, Low=1."""
         return {"high": 3, "medium": 2, "low": 1}.get(self._priority, 0)
 
-    # ── Instance Methods ──────────────────────────────────
+    #  Instance Methods 
 
     def mark_done(self) -> "Task":
         """
@@ -454,7 +454,7 @@ class Task:
         self.title = new_title
         return self
 
-    # ── Serialization ─────────────────────────────────────
+    #  Serialization ─
 
     def to_dict(self) -> dict:
         """
@@ -506,7 +506,7 @@ class Task:
         """Reset the ID counter. Use only in tests."""
         cls._id_counter = 0
 
-    # ── Dunder Methods ────────────────────────────────────
+    #  Dunder Methods 
 
     def __str__(self) -> str:
         status = "✓" if self.done else "○"

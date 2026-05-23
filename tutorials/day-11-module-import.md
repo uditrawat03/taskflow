@@ -20,28 +20,28 @@ A restructured TaskFlow AI project with a proper package layout. Instead of five
 ```
 taskflow/                    ← Python package (folder with __init__.py)
 │
-├── __init__.py              ← Package entry point, public API
-├── main.py                  ← App entry point and command loop
-├── config.py                ← All constants and configuration
+├ __init__.py              ← Package entry point, public API
+├ main.py                  ← App entry point and command loop
+├ config.py                ← All constants and configuration
 │
-├── core/                    ← Core business logic
-│   ├── __init__.py
-│   ├── tasks.py             ← Task operations (add, remove, filter)
-│   └── stats.py             ← Statistics calculations
+├ core/                    ← Core business logic
+│   ├ __init__.py
+│   ├ tasks.py             ← Task operations (add, remove, filter)
+│   └ stats.py             ← Statistics calculations
 │
-├── storage/                 ← Data persistence
-│   ├── __init__.py
-│   └── json_store.py        ← JSON file storage
+├ storage/                 ← Data persistence
+│   ├ __init__.py
+│   └ json_store.py        ← JSON file storage
 │
-├── integrations/            ← External services
-│   ├── __init__.py
-│   └── weather.py           ← Weather API integration
+├ integrations/            ← External services
+│   ├ __init__.py
+│   └ weather.py           ← Weather API integration
 │
-├── display/                 ← Terminal UI
-│   ├── __init__.py
-│   └── renderer.py          ← All display/print functions
+├ display/                 ← Terminal UI
+│   ├ __init__.py
+│   └ renderer.py          ← All display/print functions
 │
-└── errors.py                ← Custom exception hierarchy
+└ errors.py                ← Custom exception hierarchy
 
 run.py                       ← Project root entry point
 ```
@@ -170,11 +170,11 @@ A folder becomes a Python **package** when it contains an `__init__.py` file. Th
 
 ```
 taskflow/
-├── __init__.py      ← this makes 'taskflow' a package
-├── config.py
-└── core/
-    ├── __init__.py  ← this makes 'taskflow.core' a sub-package
-    └── tasks.py
+├ __init__.py      ← this makes 'taskflow' a package
+├ config.py
+└ core/
+    ├ __init__.py  ← this makes 'taskflow.core' a sub-package
+    └ tasks.py
 ```
 
 ```python
@@ -417,18 +417,18 @@ All constants live here. Import from this module, never hardcode.
 
 from pathlib import Path
 
-# ── App ───────────────────────────────────────────────────
+#  App ─
 APP_NAME = "TaskFlow AI"
 VERSION  = "1.0.0"
 
-# ── User ──────────────────────────────────────────────────
+#  User 
 USER_NAME      = "Udit"
 USER_PLAN      = "free"
 USER_LATITUDE  = 28.6139
 USER_LONGITUDE = 77.2090
 USER_LOCATION  = "Delhi, IN"
 
-# ── Limits ────────────────────────────────────────────────
+#  Limits 
 MAX_TASKS_FREE    = 10
 MAX_TASKS_PREMIUM = 100
 
@@ -438,18 +438,18 @@ PLAN_LIMITS = {
     "enterprise": 10_000,
 }
 
-# ── Validation ────────────────────────────────────────────
+#  Validation 
 VALID_PRIORITIES = {"high", "medium", "low"}
 VALID_CATEGORIES = {"work", "personal", "health", "learning", "other"}
 VALID_PLANS      = set(PLAN_LIMITS.keys())
 
-# ── Storage ───────────────────────────────────────────────
+#  Storage ─
 BASE_DIR  = Path(__file__).parent.parent   # project root
 DATA_DIR  = BASE_DIR / "data"
 DATA_FILE = DATA_DIR / "taskflow_tasks.json"
 DATE_FMT  = "%Y-%m-%d %H:%M"
 
-# ── Weather ───────────────────────────────────────────────
+#  Weather ─
 WEATHER_API_URL   = "https://api.open-meteo.com/v1/forecast"
 WEATHER_TIMEOUT   = 10
 WEATHER_CACHE_TTL = 600   # seconds

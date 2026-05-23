@@ -372,7 +372,7 @@ Create `tasks.py` — now fully function-driven. Notice how the main command loo
 
 import datetime
 
-# ─── Constants ───────────────────────────────────────────
+# ─ Constants ─
 APP_NAME         = "TaskFlow AI"
 VERSION          = "0.3"
 USER_NAME        = "Udit"
@@ -382,7 +382,7 @@ VALID_PRIORITIES = {"high", "medium", "low"}
 VALID_CATEGORIES = {"work", "personal", "health", "learning", "other"}
 
 
-# ─── Pure Helper Functions ────────────────────────────────
+# ─ Pure Helper Functions 
 
 def make_task(task_id: int, title: str, priority: str, category: str) -> dict:
     """
@@ -445,7 +445,7 @@ def format_status(task: dict) -> str:
     return "✓ done" if task["done"] else "pending"
 
 
-# ─── Display Functions (side effects) ────────────────────
+# ─ Display Functions (side effects) 
 
 def display_header() -> None:
     """Print the application header."""
@@ -502,7 +502,7 @@ def display_stats(tasks: list) -> None:
     """Display a detailed statistics dashboard."""
     stats = calculate_stats(tasks)
 
-    print("\n  ── Task Statistics ──────────────────")
+    print("\n   Task Statistics ")
     print(f"  Total      : {stats['total']}")
     print(f"  Done       : {stats['done']}  ({stats['rate']}%)")
     print(f"  Pending    : {stats['pending']}")
@@ -522,7 +522,7 @@ def display_stats(tasks: list) -> None:
     print()
 
 
-# ─── Input Collection Functions ───────────────────────────
+# ─ Input Collection Functions ─
 
 def prompt_valid(prompt: str, valid_options: set, label: str = "option") -> str:
     """
@@ -565,7 +565,7 @@ def prompt_task_number(tasks: list, action: str = "select") -> int | None:
     return index
 
 
-# ─── Command Functions ────────────────────────────────────
+# ─ Command Functions 
 
 def cmd_add(tasks: list, next_id: list) -> None:
     """
@@ -680,7 +680,7 @@ def cmd_quit(tasks: list) -> None:
     print()
 
 
-# ─── Command Registry ─────────────────────────────────────
+# ─ Command Registry ─
 # Maps command strings to functions — no giant if/elif chain needed.
 # We will expand this pattern into a full CLI framework on Day 11.
 
@@ -704,7 +704,7 @@ def display_help() -> None:
     print()
 
 
-# ─── Main ─────────────────────────────────────────────────
+# ─ Main ─
 
 def main() -> None:
     """Entry point — initialise state and run the command loop."""

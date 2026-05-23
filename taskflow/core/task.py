@@ -1,11 +1,3 @@
-# taskflow/core/task.py
-# TaskFlow AI — Task base class.
-# Replaces plain task dictionaries introduced on Day 05.
-#
-# Version history:
-#   Day 05 — tasks stored as plain dicts
-#   Day 12 — Task class introduced; replaces dicts throughout
-
 import datetime
 from ..config import VALID_PRIORITIES, VALID_CATEGORIES, DATE_FMT
 from ..errors import ValidationError
@@ -32,7 +24,7 @@ class Task:
 
     _id_counter: int = 0
 
-    # ── Constructor ───────────────────────────────────────
+    #  Constructor ─
 
     def __init__(
         self,
@@ -100,7 +92,7 @@ class Task:
         self.done = False
         self.created_at = datetime.datetime.now().strftime(DATE_FMT)
 
-    # ── Properties ────────────────────────────────────────
+    #  Properties 
 
     @property
     def priority(self) -> str:
@@ -141,7 +133,7 @@ class Task:
         """Numeric score for sorting: high=3, medium=2, low=1."""
         return {"high": 3, "medium": 2, "low": 1}.get(self._priority, 0)
 
-    # ── Instance Methods ──────────────────────────────────
+    #  Instance Methods 
 
     def mark_done(self) -> "Task":
         """
@@ -206,7 +198,7 @@ class Task:
         """
         return self.is_pending() and self.age_days() >= threshold_days
 
-    # ── Serialisation ─────────────────────────────────────
+    #  Serialisation ─
 
     def to_dict(self) -> dict:
         """
@@ -252,7 +244,7 @@ class Task:
         Task._id_counter = max(Task._id_counter, task.id)
         return task
 
-    # ── Class / Static Methods ────────────────────────────
+    #  Class / Static Methods 
 
     @staticmethod
     def priority_to_score(priority: str) -> int:
@@ -264,7 +256,7 @@ class Task:
         """Reset the ID counter to 0. Use ONLY in tests."""
         cls._id_counter = 0
 
-    # ── Dunder Methods ────────────────────────────────────
+    #  Dunder Methods 
 
     def __str__(self) -> str:
         mark = "✓" if self.done else "○"
