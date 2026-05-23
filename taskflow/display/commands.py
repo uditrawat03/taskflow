@@ -55,19 +55,19 @@ def _max_tasks() -> int:
     return PLAN_LIMITS.get(settings.user_plan, PLAN_LIMITS["free"])
 
 
-def _get_attr(task, key: str, default=""):
+def _get_attr(task: Task, key: str, default="") -> bool:
     if isinstance(task, Task):
         return getattr(task, key, default)
     return task.get(key, default)
 
 
-def _is_done(task) -> bool:
+def _is_done(task: Task) -> bool:
     if isinstance(task, Task):
         return task.done
     return task.get("done", False)
 
 
-def _index_by_id(tasks: list, task_id: int) -> int | None:
+def _index_by_id(tasks: list[Task], task_id: int) -> int | None:
     for i, t in enumerate(tasks):
         tid = t.id if isinstance(t, Task) else t.get("id")
         if tid == task_id:
@@ -75,7 +75,7 @@ def _index_by_id(tasks: list, task_id: int) -> int | None:
     return None
 
 
-def _is_overdue(task) -> bool:
+def _is_overdue(task: Task) -> bool:
     if isinstance(task, Task):
         return task.is_overdue()
     created = task.get("created_at", "")
@@ -90,7 +90,7 @@ def _is_overdue(task) -> bool:
         return False
 
 
-def _print_add_confirmation(task, total: int, max_tasks: int) -> None:
+def _print_add_confirmation(task: Task, total: int, max_tasks: int) -> None:
     typename = type(task).__name__ if isinstance(task, Task) else "Task"
     title = _get_attr(task, "title")
     print(f'\n  ✓ {typename} added: "{title}"')
@@ -107,14 +107,14 @@ def _print_add_confirmation(task, total: int, max_tasks: int) -> None:
 
 
 # add task
-def cmd_add(tasks: list, raw_input: str = "") -> None:
+def cmd_add(tasks: list[Task], raw_input: str = "") -> None:
     """Collect task input and delegate creation to the service layer."""
 
     if is_at_limit(tasks):
         limit = get_task_limit()
         print(
             f"\n  ✗ {pluralise(limit, 'task')} limit reached "
-            f"on {USER_PLAN} plan. Upgrade to premium.\n"
+            f"on {settings.user_plan} plan. Upgrade to premium.\n"
         )
         return
 
@@ -177,13 +177,15 @@ def _print_add_success(task: Task, total: int) -> None:
     limit = get_task_limit()
     remaining = limit - total
     if 0 < remaining <= 2:
-        print(f"  ⚠  {pluralise(remaining, 'slot')} remaining on {USER_PLAN} plan.")
+        print(
+            f"  ⚠  {pluralise(remaining, 'slot')} remaining on {settings.user_plan} plan."
+        )
     print()
 
 
 # view tasks
 def cmd_view(
-    tasks: list,
+    tasks: list[Task],
     priority: str | None = None,
     category: str | None = None,
     show_done: bool = False,
@@ -238,7 +240,7 @@ def cmd_view(
 
 # done task
 @validate_non_empty
-def cmd_done(tasks: list, task_id: int | None = None) -> None:
+def cmd_done(tasks: list[Task], task_id: int | None = None) -> None:
     """
     Mark a task as done.
 
@@ -288,7 +290,7 @@ def cmd_done(tasks: list, task_id: int | None = None) -> None:
 
 # remove task
 @validate_non_empty
-def cmd_remove(tasks: list, task_id: int | None = None) -> None:
+def cmd_remove(tasks: list[Task], task_id: int | None = None) -> None:
     """
     Remove a task permanently.
 
@@ -317,7 +319,7 @@ def cmd_remove(tasks: list, task_id: int | None = None) -> None:
 
 
 # filter tasks
-def cmd_filter(tasks: list) -> None:
+def cmd_filter(tasks: list[Task]) -> None:
     """Interactively filter tasks by priority, category, or status."""
     if not tasks:
         print("\n  ✗ No tasks to filter.\n")
@@ -367,7 +369,7 @@ def cmd_filter(tasks: list) -> None:
 
 
 # search tasks
-def cmd_search(tasks: list, keyword: str = "") -> None:
+def cmd_search(tasks: list[Task], keyword: str = "") -> None:
     """
     Search tasks by keyword or regex pattern.
 
@@ -415,7 +417,7 @@ def cmd_search(tasks: list, keyword: str = "") -> None:
 
 
 # stats tasks
-def cmd_stats(tasks: list) -> None:
+def cmd_stats(tasks: list[Task]) -> None:
     """Display the full statistics dashboard."""
     display_stats_dashboard(tasks)
 
@@ -432,7 +434,7 @@ def cmd_stats(tasks: list) -> None:
 # detail ─
 
 
-def cmd_detail(tasks: list) -> None:
+def cmd_detail(tasks: list[Task]) -> None:
     """Show full detail for a single selected task."""
     if not tasks:
         print("\n  ✗ No tasks to inspect.\n")
@@ -447,7 +449,7 @@ def cmd_detail(tasks: list) -> None:
 
 
 # rename tasks
-def cmd_rename(tasks: list) -> None:
+def cmd_rename(tasks: list[Task]) -> None:
     """Rename a task with validation."""
     if not tasks:
         print("\n  ✗ No tasks to rename.\n")
@@ -486,7 +488,9 @@ def cmd_rename(tasks: list) -> None:
 def cmd_weather() -> dict | None:
     """Fetch and display current weather. Returns weather dict for caching."""
     try:
-        weather = fetch_weather(settings.user_latitude, settings.user_longitude, settings.user_location)
+        weather = fetch_weather(
+            settings.user_latitude, settings.user_longitude, settings.user_location
+        )
         display_weather(weather)
         return weather
     except Exception as e:
@@ -498,7 +502,9 @@ def cmd_weather() -> dict | None:
 def cmd_forecast() -> None:
     """Fetch and display a 3-day weather forecast."""
     try:
-        forecast = fetch_forecast(settings.user_latitude, settings.user_longitude, settings.user_location)
+        forecast = fetch_forecast(
+            settings.user_latitude, settings.user_longitude, settings.user_location
+        )
         display_forecast(forecast, settings.user_location)
     except Exception as e:
         print(f"\n  ✗ Forecast unavailable: {e}\n")
@@ -520,7 +526,7 @@ def cmd_storage() -> None:
 # quit
 
 
-def cmd_quit(tasks: list, save: bool = True) -> None:
+def cmd_quit(tasks: list[Task], save: bool = True) -> None:
     """
     Save tasks and print a goodbye message.
 

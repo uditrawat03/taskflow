@@ -2,17 +2,15 @@ import argparse
 import sys
 from pathlib import Path
 
-from .config import APP_NAME, VERSION, USER_LATITUDE, USER_LONGITUDE, USER_LOCATION
+from .config import APP_NAME, VERSION
 from .errors import ValidationError, StorageError
-from .storage.json_store import save_tasks, backup_tasks
+from .storage.json_store import save_tasks
 from .core.task import Task
-from .core.stats import calculate_stats
 from .display.commands import (
     cmd_add, cmd_view, cmd_done, cmd_remove,
-    cmd_filter, cmd_search, cmd_stats,
-    cmd_weather, cmd_forecast, cmd_backup, cmd_storage, cmd_quit,
+    cmd_search, cmd_stats,
+    cmd_weather, cmd_forecast, cmd_backup, cmd_storage,
 )
-from .display.renderer import display_tasks
 
 __all__ = ["build_parser", "run_one_shot"]
 
@@ -104,7 +102,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def run_one_shot(args: argparse.Namespace, tasks: list) -> bool:
+def run_one_shot(args: argparse.Namespace, tasks: list[Task]) -> bool:
     """
     Execute a single non-interactive command.
 
@@ -174,7 +172,7 @@ def run_one_shot(args: argparse.Namespace, tasks: list) -> bool:
     return True   # command was executed
 
 
-def _auto_save(tasks: list, filepath: Path | None = None) -> None:
+def _auto_save(tasks: list[Task], filepath: Path | None = None) -> None:
     """Save tasks after a mutating one-shot command."""
     try:
         kwargs = {"filepath": filepath} if filepath else {}

@@ -151,7 +151,7 @@ def _do_fetch_weather(
     return None
 
 
-def fetch_weather(latitude, longitude, location_name="", use_cache=True):
+def fetch_weather(latitude: any, longitude: any, location_name="", use_cache=True):
     if use_cache:
         cached = _load_cache()
         if cached:

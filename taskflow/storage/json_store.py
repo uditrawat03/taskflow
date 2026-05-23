@@ -13,7 +13,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Save tasks
-def save_tasks(tasks, filepath=DATA_FILE):
+def save_tasks(tasks: list[Task], filepath=DATA_FILE):
     """Save tasks to JSON — atomic write."""
     filepath.parent.mkdir(parents=True, exist_ok=True)
     tmp = filepath.with_suffix(".tmp")

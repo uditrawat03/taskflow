@@ -1,4 +1,5 @@
 from .errors import ValidationError, StorageError, TaskFlowError
+from .core.task         import Task
 from .display.commands import (
     cmd_add,
     cmd_view,
@@ -20,7 +21,7 @@ from .display.renderer import display_help
 __all__ = ["run_interactive_shell"]
 
 
-def run_interactive_shell(tasks: list) -> None:
+def run_interactive_shell(tasks: list[Task]) -> None:
     """
     Run the interactive TaskFlow AI command loop.
 
