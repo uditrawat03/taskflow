@@ -7,6 +7,17 @@ from .core.task_types import RecurringTask
 from .core.stats import calculate_stats
 from typing import TYPE_CHECKING
 
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+from .errors import ValidationError, TaskNotFoundError
+from .core.task       import Task
+from .core.task_types import RecurringTask
+
+if TYPE_CHECKING:
+    from .repositories.base import TaskRepository
+
+
 from .env_config import get_settings
 
 settings = get_settings()
@@ -44,6 +55,33 @@ def get_task_limit(plan: str | None = None) -> int:
 def is_at_limit(tasks: list[Task], plan: str | None = None) -> bool:
     """Return True if the task list has reached its plan limit."""
     return len(tasks) >= get_task_limit(plan)
+
+def add_task(
+    task: Task,
+    repo: "TaskRepository",
+    plan: str | None = None,
+) -> Task:
+    """
+    Validate the plan limit and add a task through the repository.
+
+    Args:
+        task (Task)          : The task to add.
+        repo (TaskRepository): The storage repository.
+        plan (str | None)    : Plan name for limit checking.
+
+    Returns:
+        Task: The added task.
+
+    Raises:
+        ValidationError: If the task limit is reached.
+    """
+    limit = PLAN_LIMITS.get(plan or settings.user_plan, PLAN_LIMITS["free"])
+    if repo.count() >= limit:
+        raise ValidationError(
+            f"Task limit reached ({limit} tasks on {plan or settings.user_plan} plan).",
+            field="tasks", value=repo.count(),
+        )
+    return repo.add(task)
 
 
 def add_task_to_list(
@@ -89,18 +127,13 @@ def mark_task_done(tasks: list[Task], index: int) -> Task:
     return task
 
 
-def rename_task(tasks: list[Task], index: int, new_title: str) -> Task:
-    """Rename a task at the given index with validation."""
-    if not (0 <= index < len(tasks)):
-        raise IndexError(f"Index {index} out of range.")
-    new_title = new_title.strip()
-    if not new_title:
-        raise ValidationError("Title cannot be empty.", field="title", value=new_title)
-    if len(new_title) > 200:
-        raise ValidationError("Title too long.", field="title", value=len(new_title))
-    task: Task = tasks[index]
+def rename_task(task_id: int, new_title: str, repo: TaskRepository) -> Task:
+    """Rename a task and persist through the repository."""
+    task = repo.find_by_id(task_id)
+    if task is None:
+        raise TaskNotFoundError(task_id)
     task.rename(new_title)
-    return task
+    return repo.update(task)
 
 
 def find_task_by_id(tasks: list[Task], task_id: int) -> Task:
@@ -190,3 +223,21 @@ def _is_overdue(task) -> bool:
         return age >= OVERDUE_THRESHOLD_DAYS
     except ValueError:
         return False
+
+def remove_task(task_id: int, repo: TaskRepository) -> Task:
+    """Remove a task by ID through the repository."""
+    return repo.delete(task_id)
+
+
+def mark_done(task_id: int, repo: TaskRepository) -> Task:
+    """Mark a task as done and persist through the repository."""
+    task = repo.find_by_id(task_id)
+    if task is None:
+        raise TaskNotFoundError(task_id)
+    if isinstance(task, Task) and task.done and not isinstance(task, RecurringTask):
+        raise ValidationError(f"Task {task_id} is already done.", field="done")
+    task.mark_done()
+    return repo.update(task)
+
+
+
