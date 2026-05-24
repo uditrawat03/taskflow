@@ -1,4 +1,4 @@
-# .pre-commit-config.yaml
+# .pre-commit-config.yaml — Auto-run formatters and linters before every commit.
 repos:
   - repo: https://github.com/psf/black
     rev: 24.4.2

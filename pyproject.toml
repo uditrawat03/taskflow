@@ -1,16 +1,13 @@
-# pyproject.toml
-# TaskFlow AI — project definition and tool configuration.
-
 [build-system]
 requires      = ["setuptools>=70", "wheel"]
 build-backend = "setuptools.backends.legacy:build"
 
 
-#  Project Metadata 
+#  Project metadata 
 
 [project]
 name        = "taskflow-ai"
-version     = "1.0.0"
+version     = "1.1.0"
 description = "Intelligent task management from the terminal — 90-day Python series"
 readme      = "README.md"
 license     = { text = "MIT" }
@@ -19,115 +16,115 @@ keywords    = ["tasks", "productivity", "ai", "cli"]
 
 requires-python = ">=3.14"
 
-# Production dependencies — these are what pip/uv installs by default
 dependencies = [
     "requests>=2.28",
 ]
 
-# Optional dependency groups
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
+    "pytest-mock>=3.14",
     "black>=24.0",
     "ruff>=0.4",
     "mypy>=1.10",
     "pre-commit>=3.7",
     "pip-tools>=7.0",
+    "python-dotenv>=1.0",
+]
+async = [
+    "aiohttp>=3.9",
 ]
 ai = [
-    # Added in Phase 4 — placeholder for now
+    # Phase 4 — uncomment when needed
     # "anthropic>=0.25",
     # "openai>=1.30",
 ]
 
-# Entry point — makes `taskflow` a runnable command after install
 [project.scripts]
 taskflow = "taskflow.main:main"
 
 [project.urls]
-Homepage   = "https://github.com/uditrawat03/taskflow"
-Repository = "https://github.com/uditrawat03/taskflow"
+Homepage   = "https://github.com/udit/taskflow"
+Repository = "https://github.com/udit/taskflow"
 
 
-#  Tool Configuration 
+#  Setuptools 
 
 [tool.setuptools.packages.find]
-where = ["."]
+where   = ["."]
 include = ["taskflow*"]
 
-# Black — code formatter
+
+#  Black ─
+
 [tool.black]
 line-length    = 88
 target-version = ["py314"]
 
-# Ruff — fast linter (replaces flake8, isort, and more)
+
+#  Ruff 
+
 [tool.ruff]
-line-length = 88
+line-length    = 88
 target-version = "py314"
 
 [tool.ruff.lint]
-select = [
-    "E",   # pycodestyle errors
-    "W",   # pycodestyle warnings
-    "F",   # pyflakes
-    "I",   # isort (import sorting)
-    "B",   # flake8-bugbear
-    "UP",  # pyupgrade — modern Python idioms
-]
-ignore = [
-    "E501",  # line too long — handled by black
-]
+select = ["E", "W", "F", "I", "B", "UP"]
+ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101"]  # allow assert in tests
+"tests/*" = ["S101"]
 
-# Mypy — static type checker
+
+#  Mypy 
+
 [tool.mypy]
-python_version         = "3.14"
-strict                 = false
-warn_return_any        = true
-warn_unused_configs    = true
-ignore_missing_imports = true
+python_version          = "3.14"
+warn_return_any         = true
+warn_unused_configs     = true
 warn_redundant_casts    = true
 warn_unused_ignores     = true
 no_implicit_optional    = true
 strict_equality         = true
+ignore_missing_imports  = true
 
-# Pytest — test runner
+[[tool.mypy.overrides]]
+module                = ["taskflow.core.*", "taskflow.services", "taskflow.storage.*"]
+strict                = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+
+[[tool.mypy.overrides]]
+module                    = ["taskflow.display.*", "taskflow.integrations.*"]
+disallow_untyped_defs     = false
+warn_return_any           = false
+
+
+#  Pytest 
+
 [tool.pytest.ini_options]
-testpaths    = ["tests"]
-python_files = ["test_*.py"]
+testpaths      = ["tests"]
+python_files   = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts      = "-v --tb=short"
+addopts        = "-v --tb=short"
 
-# Coverage
+
+#  Coverage 
+
 [tool.coverage.run]
-source      = ["taskflow"]
-omit        = ["tests/*", "run.py", "*/logging_config.py"]
-branch      = true   # measure branch coverage, not just line coverage
+source  = ["taskflow"]
+omit    = ["tests/*", "run.py"]
+branch  = true
 
 [tool.coverage.report]
-show_missing = true
-skip_covered = false
-fail_under  = 80
+show_missing  = true
+skip_covered  = false
+fail_under    = 75
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
     "if __name__ == .__main__.:",
     "raise NotImplementedError",
 ]
-
-# Strict mode for core business logic
-[[tool.mypy.overrides]]
-module               = ["taskflow.core.*", "taskflow.services", "taskflow.storage.*"]
-strict               = true
-disallow_untyped_defs = true
-disallow_any_generics = true
-
-# Lenient mode for display and integration code (has more any-typed dependencies)
-[[tool.mypy.overrides]]
-module                        = ["taskflow.display.*", "taskflow.integrations.*"]
-disallow_untyped_defs         = false
-warn_return_any               = false

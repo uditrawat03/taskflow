@@ -48,6 +48,8 @@ data/
 *.tmp
 taskflow_tasks*.json
 taskflow_backup_*.json
+weather_cache.json
+
 
 #  Secrets ─
 .env

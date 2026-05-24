@@ -1,63 +1,84 @@
 # TaskFlow AI — Technical Debt Register
-Last updated: Day 20
 
-## Critical (fix before Phase 3)
+Last updated: Day 30
 
-### TD-001: display/commands.py handles both display and business logic
-- **File:** taskflow/display/commands.py
-- **Problem:** The module does too much — it validates input, calls business
-  logic, and formats output. The name 'display' is misleading.
-- **Impact:** Hard to test business logic in isolation.
-- **Fix:** Split into commands.py (input handling) and a separate
-  services.py (business logic calls). Renderer stays in renderer.py.
-- **Effort:** Medium (1-2 hours)
+## Legend
+- **Critical** — blocks Phase 3; fix before FastAPI work begins
+- **High** — fix during Phase 2 continued or early Phase 3
+- **Low** — fix when convenient; documents known imperfection
 
-### TD-002: Task objects and dicts coexist in the same lists
-- **File:** taskflow/display/commands.py, shell.py
-- **Problem:** Some parts of the app use Task objects (post-Day 12),
-  some parts still pass raw dicts. The _to_dict() helper is a workaround.
-- **Impact:** Confusing, error-prone, hard to type-check.
-- **Fix:** Standardise on Task objects throughout. The renderer.py
-  should accept Task objects directly, not dicts.
-- **Effort:** Medium (2-3 hours)
+---
 
-## High (fix during Phase 2 or 3)
+## Critical — Fix Before Phase 3
 
-### TD-003: No tests
-- **File:** tests/ (empty)
-- **Problem:** Zero test coverage. Changes are verified manually only.
-- **Impact:** High risk of regressions as codebase grows.
-- **Fix:** Add unit tests for Task, stats, storage, and parser (Day 25).
-- **Effort:** High (ongoing)
+### TD-001: display/commands.py mixed concerns ✅ RESOLVED (Day 21)
+- **Problem:** Commands mixed UI, validation, and business logic.
+- **Fix:** `services.py` extracted; commands now delegate to it.
+- **Resolved:** Day 21
 
-### TD-004: Weather fetched on every startup
-- **File:** taskflow/main.py, integrations/weather.py
-- **Problem:** Weather API is called on every `python run.py` invocation,
-  even for one-shot commands like `taskflow view`.
-- **Impact:** Slow cold start (~0.5-1s) for simple commands.
-- **Fix:** Cache weather to a file with a 10-minute TTL. Skip fetch
-  for one-shot commands unless `--weather` flag is passed.
-- **Effort:** Low (30 minutes)
+### TD-002: Task objects and dicts coexisted ✅ RESOLVED (Day 22)
+- **Problem:** Dual-path code with `isinstance(task, Task)` everywhere.
+- **Fix:** `renderer.py` and `services.py` standardised on Task objects.
+- **Resolved:** Day 22
 
-### TD-005: USER_NAME hardcoded in config.py
-- **File:** taskflow/config.py
-- **Problem:** "Udit" is baked into the source code. Other users cannot
-  personalise without editing config.py.
-- **Impact:** Not a real multi-user app.
-- **Fix:** Read USER_NAME from .env or a user settings file (Day 24).
-- **Effort:** Low (30 minutes)
+---
 
-## Low (nice to have, fix when convenient)
+## High — Fix During Phase 2 / Early Phase 3
 
-### TD-006: shell.py and cli.py have overlapping command dispatch
-- **Problem:** Both shell.py and cli.py duplicate parts of the command
-  dispatch logic.
-- **Fix:** Unify into a single dispatch table in commands.py.
+### TD-003: Test coverage was zero ✅ RESOLVED (Days 25-26)
+- **Problem:** No automated tests.
+- **Fix:** Full test suite with 120+ tests, 90%+ coverage.
+- **Resolved:** Day 26
+
+### TD-004: Weather fetched on every startup ✅ RESOLVED (Day 18)
+- **Problem:** Network call blocked every launch, even for one-shot commands.
+- **Fix:** 10-minute file cache in `weather_cache.json`.
+- **Resolved:** Day 18
+
+### TD-005: USER_NAME hardcoded in config.py ✅ RESOLVED (Day 24)
+- **Problem:** No personalisation without editing source.
+- **Fix:** `TASKFLOW_USER_NAME` env var via `env_config.py`.
+- **Resolved:** Day 24
+
+### TD-006: shell.py and cli.py had overlapping dispatch ✅ RESOLVED (Day 21)
+- **Problem:** Both files duplicated command routing.
+- **Fix:** `services.py` + `commands.py` are the single source of truth.
+- **Resolved:** Day 21
+
+---
+
+## Low — Address When Convenient
+
+### TD-007: CONTRIBUTING.md referenced non-existent tests
+- **Problem:** Written Day 19 before tests existed.
+- **Status:** Tests added Day 25. CONTRIBUTING.md updated Day 26.
+- **Resolved:** Day 26
+
+### TD-008: No SQLite backend yet
+- **Problem:** JSON storage degrades with thousands of tasks.
+- **Fix:** Day 34 — `SqliteTaskRepository` via Repository pattern (already wired).
+- **Target:** Day 34
+
+### TD-009: Weather uses sync `requests` inside async startup fallback
+- **Problem:** When `aiohttp` unavailable, `asyncio.to_thread` wraps blocking call.
+- **Fix:** Make `aiohttp` a non-optional dependency, or always use `to_thread`.
 - **Effort:** Low
 
-### TD-007: renderer.py accepts dicts but Task objects are richer
-- **Problem:** display_tasks() takes a list[dict] but Task objects have
-  methods (is_overdue(), urgency_label) that dicts do not.
-- **Fix:** Accept list[Task | dict] and use isinstance() to call the
-  right attributes.
-- **Effort:** Low
+### TD-010: No input sanitisation on task titles
+- **Problem:** Titles can contain SQL injection strings, HTML, etc.
+- **Impact:** Harmless now (JSON storage), critical when DB/API added.
+- **Fix:** Day 36 — Security basics; sanitise at `parser.py` level.
+- **Target:** Day 36
+
+---
+
+## Metrics (Day 30)
+
+| Metric | Value |
+|--------|-------|
+| Python files | 27 |
+| Test files | 11 |
+| Test functions | 120+ |
+| Coverage | ~90% |
+| Open TD items | 3 (low severity) |
+| Resolved TD items | 7 |
